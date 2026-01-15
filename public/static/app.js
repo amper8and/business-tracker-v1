@@ -217,17 +217,32 @@ const Auth = {
         
         console.log('Raw user data from sheet (first 3 rows):', data.slice(0, 3));
         
+        // Debug: Check what columns are actually available
+        if (data.length > 1) {
+            console.log('Available column names:', Object.keys(data[1]));
+        }
+        
         // Skip header row and map to user objects
-        STATE.users = data.slice(1).map((row, index) => ({
-            rowIndex: index + 2, // +2 because: 0-indexed + 1 for header + 1 for Google Sheets 1-indexing
-            username: row['Username'] || row['Column0'] || '',
-            password: row['Password'] || row['Column1'] || '',
-            name: row['Name'] || row['Column2'] || '',
-            type: (row['Type'] || row['Column3'] || 'User').trim(),
-            contentBusiness: (row['Content Business'] || row['Column4'] || '').toLowerCase() === 'yes',
-            channelBusiness: (row['Channel Business'] || row['Column5'] || '').toLowerCase() === 'yes',
-            lastLogin: row['Last Login'] || row['Column6'] || ''
-        })).filter(u => u.username); // Filter out empty rows
+        STATE.users = data.slice(1).map((row, index) => {
+            // Try multiple possible column names for each field
+            const username = row['Username'] || row['UserID'] || row['User'] || row['Column0'] || '';
+            const password = row['Password'] || row['Column1'] || '';
+            // For name, check if Column1 looks like a name (not a password or type)
+            // If Column1 is not the name, username will be used as fallback
+            const name = row['Name'] || row['Full Name'] || row['DisplayName'] || username;
+            const type = (row['Type'] || row['Role'] || row['Column3'] || row['Column2'] || 'User').trim();
+            
+            return {
+                rowIndex: index + 2,
+                username: username,
+                password: password,
+                name: name,
+                type: type,
+                contentBusiness: (row['Content Business'] || row['Content'] || row['Column4'] || '').toLowerCase() === 'yes',
+                channelBusiness: (row['Channel Business'] || row['Channel'] || row['Column5'] || '').toLowerCase() === 'yes',
+                lastLogin: row['Last Login'] || row['Column6'] || ''
+            };
+        }).filter(u => u.username); // Filter out empty rows
         
         console.log('Parsed users:', STATE.users.map(u => ({ username: u.username, name: u.name, type: u.type })));
     },
