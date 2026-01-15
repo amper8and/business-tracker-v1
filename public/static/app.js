@@ -356,22 +356,54 @@ const App = {
         // For demo purposes, using local storage
         // In production, would load from a dedicated sheet
         const stored = localStorage.getItem('kanbanCards');
-        if (stored) {
-            STATE.kanbanCards = JSON.parse(stored);
-        } else {
+        const storedVersion = localStorage.getItem('kanbanVersion');
+        const currentVersion = '2.0'; // Increment this to regenerate sample data
+        
+        // If no data, wrong version, or cards have invalid owners, regenerate
+        if (!stored || storedVersion !== currentVersion) {
+            console.log('Generating new sample kanban data with current users...');
             STATE.kanbanCards = this.generateSampleKanbanData();
+            localStorage.setItem('kanbanVersion', currentVersion);
             this.saveKanbanData();
+        } else {
+            STATE.kanbanCards = JSON.parse(stored);
+            
+            // Validate that all card owners exist in current users list
+            const validUsernames = STATE.users.map(u => u.username);
+            const hasInvalidOwners = STATE.kanbanCards.some(card => !validUsernames.includes(card.owner));
+            
+            if (hasInvalidOwners) {
+                console.log('Found invalid card owners, regenerating data...');
+                STATE.kanbanCards = this.generateSampleKanbanData();
+                localStorage.setItem('kanbanVersion', currentVersion);
+                this.saveKanbanData();
+            }
         }
     },
     
     generateSampleKanbanData() {
-        // Generate sample data for demonstration
+        // Generate sample data using actual users from the sheet
+        // Use the current logged-in user as the owner
+        const currentUsername = STATE.currentUser?.username;
+        
+        // Find different user types for variety
+        const adminUsers = STATE.users.filter(u => u.type.trim() === 'Admin');
+        const leadUsers = STATE.users.filter(u => u.type.trim() === 'Lead');
+        const regularUsers = STATE.users.filter(u => u.type.trim() === 'User');
+        
+        // Pick owners from actual users
+        const owner1 = adminUsers[0]?.username || STATE.users[0]?.username || currentUsername;
+        const owner2 = leadUsers[0]?.username || STATE.users[1]?.username || currentUsername;
+        const owner3 = regularUsers[0]?.username || STATE.users[2]?.username || currentUsername;
+        
+        console.log('Generating sample cards with owners:', { owner1, owner2, owner3 });
+        
         return [
             {
                 id: Utils.generateId(),
                 name: 'Q1 Stakeholder Meeting with Econet',
                 capability: 'Stakeholder Engagement',
-                owner: STATE.users[0]?.username || 'admin',
+                owner: owner1,
                 category: 'Content',
                 startDate: '2026-01-01',
                 targetDate: '2026-01-31',
@@ -383,7 +415,7 @@ const App = {
                 id: Utils.generateId(),
                 name: 'Launch NoFunds Service',
                 capability: 'Business Development',
-                owner: STATE.users[0]?.username || 'admin',
+                owner: owner2,
                 category: 'Channel',
                 startDate: '2026-01-10',
                 targetDate: '2026-06-30',
@@ -395,7 +427,7 @@ const App = {
                 id: Utils.generateId(),
                 name: 'YoGamezPro Product Refresh',
                 capability: 'Product Planning',
-                owner: STATE.users[0]?.username || 'admin',
+                owner: owner3,
                 category: 'Content',
                 startDate: '2026-01-05',
                 targetDate: '2026-02-28',
@@ -1134,6 +1166,15 @@ const App = {
                 // Update card lane
                 const card = STATE.kanbanCards.find(c => c.id === cardId);
                 if (card) {
+                    console.log('Drop permission check:', {
+                        userType: STATE.currentUser.type,
+                        userTypeTrimmed: STATE.currentUser.type.trim(),
+                        isAdmin: STATE.currentUser.type.trim() === 'Admin',
+                        cardOwner: card.owner,
+                        currentUser: STATE.currentUser.username,
+                        ownersMatch: card.owner === STATE.currentUser.username
+                    });
+                    
                     // Check permissions - Admin can move any card, others can only move their own
                     if (STATE.currentUser.type.trim() !== 'Admin' && card.owner !== STATE.currentUser.username) {
                         alert('You can only move cards you own');
@@ -1183,6 +1224,15 @@ const App = {
             // Edit mode
             const card = STATE.kanbanCards.find(c => c.id === cardId);
             if (card) {
+                console.log('Edit permission check:', {
+                    userType: STATE.currentUser.type,
+                    userTypeTrimmed: STATE.currentUser.type.trim(),
+                    isAdmin: STATE.currentUser.type.trim() === 'Admin',
+                    cardOwner: card.owner,
+                    currentUser: STATE.currentUser.username,
+                    ownersMatch: card.owner === STATE.currentUser.username
+                });
+                
                 // Check permissions - Admin can edit any card, others can only edit their own
                 if (STATE.currentUser.type.trim() !== 'Admin' && card.owner !== STATE.currentUser.username) {
                     alert('You can only edit cards you own');
