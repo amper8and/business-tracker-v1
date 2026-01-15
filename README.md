@@ -2,6 +2,12 @@
 
 **A comprehensive multi-level business performance tracking and management system for FGR & Mono Digital**
 
+## 📦 Current Build: **Build 0.1** (Stable Baseline)
+- **Git Tag**: `v0.1-build`
+- **Backup**: [Download Build 0.1](https://www.genspark.ai/api/files/s/akrx0liP)
+- **Status**: ✅ Stable - Login, Admin permissions, Column mapping working
+- **Build Notes**: See [BUILD_NOTES.md](BUILD_NOTES.md) for details
+
 ## 🎯 Project Overview
 
 DrumTree Business Tracker is a sophisticated web application designed to support the execution of the 2026 business strategy for FGR and Mono Digital. It provides a three-level hierarchical view of business performance across 6 key capabilities:
