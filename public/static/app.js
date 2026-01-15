@@ -215,6 +215,8 @@ const Auth = {
             CONFIG.SHEET_TABS.USERS
         );
         
+        console.log('Raw user data from sheet (first 3 rows):', data.slice(0, 3));
+        
         // Skip header row and map to user objects
         STATE.users = data.slice(1).map((row, index) => ({
             rowIndex: index + 2, // +2 because: 0-indexed + 1 for header + 1 for Google Sheets 1-indexing
@@ -226,6 +228,8 @@ const Auth = {
             channelBusiness: (row['Channel Business'] || row['Column5'] || '').toLowerCase() === 'yes',
             lastLogin: row['Last Login'] || row['Column6'] || ''
         })).filter(u => u.username); // Filter out empty rows
+        
+        console.log('Parsed users:', STATE.users.map(u => ({ username: u.username, name: u.name, type: u.type })));
     },
     
     setupLoginForm() {
@@ -1011,20 +1015,26 @@ const App = {
         const ownerFilter = document.getElementById('kanban-filter-owner');
         ownerFilter.innerHTML = '';
         
+        console.log('Setting up kanban filters. Total users:', STATE.users.length);
+        console.log('Sample user:', STATE.users[0]);
+        
         let availableUsers = STATE.users;
-        if (STATE.currentUser.type === 'User') {
+        if (STATE.currentUser.type.trim() === 'User') {
             availableUsers = [STATE.currentUser];
-        } else if (STATE.currentUser.type === 'Lead') {
+        } else if (STATE.currentUser.type.trim() === 'Lead') {
             const category = STATE.currentUser.contentBusiness ? 'Content' : 'Channel';
             availableUsers = STATE.users.filter(u => {
                 return category === 'Content' ? u.contentBusiness : u.channelBusiness;
             });
         }
         
+        console.log('Available users for owner filter:', availableUsers.map(u => ({ username: u.username, name: u.name, type: u.type })));
+        
         availableUsers.forEach(user => {
             const option = document.createElement('option');
             option.value = user.username;
             option.textContent = user.name;
+            console.log('Adding owner option:', { value: user.username, text: user.name });
             ownerFilter.appendChild(option);
         });
         
