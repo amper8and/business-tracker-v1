@@ -220,17 +220,21 @@ const Auth = {
         // Debug: Check what columns are actually available
         if (data.length > 1) {
             console.log('Available column names:', Object.keys(data[1]));
+            console.log('First user row raw data:', data[1]);
         }
         
         // Skip header row and map to user objects
+        // Based on Google Sheet structure: Column0=Username, Column1=Password, Column2=Type, Column3=Content, Column4=Channel, Column5=Last Login
         STATE.users = data.slice(1).map((row, index) => {
-            // Try multiple possible column names for each field
-            const username = row['Username'] || row['UserID'] || row['User'] || row['Column0'] || '';
-            const password = row['Password'] || row['Column1'] || '';
-            // For name, check if Column1 looks like a name (not a password or type)
-            // If Column1 is not the name, username will be used as fallback
-            const name = row['Name'] || row['Full Name'] || row['DisplayName'] || username;
-            const type = (row['Type'] || row['Role'] || row['Column3'] || row['Column2'] || 'User').trim();
+            const username = row['Column0'] || '';
+            const password = row['Column1'] || '';
+            const name = username; // No separate name column in sheet
+            const type = (row['Column2'] || 'User').trim();
+            const content = (row['Column3'] || '').trim().toLowerCase();
+            const channel = (row['Column4'] || '').trim().toLowerCase();
+            const contentBusiness = content === 'yes';
+            const channelBusiness = channel === 'yes';
+            const lastLogin = row['Column5'] || '';
             
             return {
                 rowIndex: index + 2,
@@ -238,13 +242,13 @@ const Auth = {
                 password: password,
                 name: name,
                 type: type,
-                contentBusiness: (row['Content Business'] || row['Content'] || row['Column4'] || '').toLowerCase() === 'yes',
-                channelBusiness: (row['Channel Business'] || row['Channel'] || row['Column5'] || '').toLowerCase() === 'yes',
-                lastLogin: row['Last Login'] || row['Column6'] || ''
+                contentBusiness: contentBusiness,
+                channelBusiness: channelBusiness,
+                lastLogin: lastLogin
             };
         }).filter(u => u.username); // Filter out empty rows
         
-        console.log('Parsed users:', STATE.users.map(u => ({ username: u.username, name: u.name, type: u.type })));
+        console.log('Parsed users:', STATE.users.map(u => ({ username: u.username, name: u.name, type: u.type, content: u.contentBusiness, channel: u.channelBusiness })));
     },
     
     setupLoginForm() {
