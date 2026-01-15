@@ -221,7 +221,7 @@ const Auth = {
             username: row['Username'] || row['Column0'] || '',
             password: row['Password'] || row['Column1'] || '',
             name: row['Name'] || row['Column2'] || '',
-            type: row['Type'] || row['Column3'] || 'User',
+            type: (row['Type'] || row['Column3'] || 'User').trim(),
             contentBusiness: (row['Content Business'] || row['Column4'] || '').toLowerCase() === 'yes',
             channelBusiness: (row['Channel Business'] || row['Column5'] || '').toLowerCase() === 'yes',
             lastLogin: row['Last Login'] || row['Column6'] || ''
@@ -256,7 +256,7 @@ const Auth = {
             }
             
             // Update last login (in production, would call Apps Script)
-            console.log('User logged in:', user.username);
+            console.log('User logged in:', user.username, 'Type:', user.type, 'Type length:', user.type.length);
             
             // Store user session
             STATE.currentUser = user;
@@ -1134,8 +1134,8 @@ const App = {
                 // Update card lane
                 const card = STATE.kanbanCards.find(c => c.id === cardId);
                 if (card) {
-                    // Check permissions
-                    if (STATE.currentUser.type !== 'Admin' && card.owner !== STATE.currentUser.username) {
+                    // Check permissions - Admin can move any card, others can only move their own
+                    if (STATE.currentUser.type.trim() !== 'Admin' && card.owner !== STATE.currentUser.username) {
                         alert('You can only move cards you own');
                         return;
                     }
@@ -1183,8 +1183,8 @@ const App = {
             // Edit mode
             const card = STATE.kanbanCards.find(c => c.id === cardId);
             if (card) {
-                // Check permissions
-                if (STATE.currentUser.type !== 'Admin' && card.owner !== STATE.currentUser.username) {
+                // Check permissions - Admin can edit any card, others can only edit their own
+                if (STATE.currentUser.type.trim() !== 'Admin' && card.owner !== STATE.currentUser.username) {
                     alert('You can only edit cards you own');
                     Utils.hide('card-modal');
                     return;
@@ -1250,8 +1250,8 @@ const App = {
             // Update existing
             const card = STATE.kanbanCards.find(c => c.id === cardId);
             if (card) {
-                // Check permissions
-                if (STATE.currentUser.type !== 'Admin' && card.owner !== STATE.currentUser.username) {
+                // Check permissions - Admin can edit any card, others can only edit their own
+                if (STATE.currentUser.type.trim() !== 'Admin' && card.owner !== STATE.currentUser.username) {
                     alert('You can only edit cards you own');
                     return;
                 }
@@ -1278,8 +1278,8 @@ const App = {
         if (index !== -1) {
             const card = STATE.kanbanCards[index];
             
-            // Check permissions
-            if (STATE.currentUser.type !== 'Admin' && card.owner !== STATE.currentUser.username) {
+            // Check permissions - Admin can delete any card, others can only delete their own
+            if (STATE.currentUser.type.trim() !== 'Admin' && card.owner !== STATE.currentUser.username) {
                 alert('You can only delete cards you own');
                 return;
             }
