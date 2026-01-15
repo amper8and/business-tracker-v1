@@ -1,25 +1,4 @@
-import { Hono } from 'hono'
-import { serveStatic } from 'hono/cloudflare-workers'
-import { readFileSync } from 'fs'
-import { join } from 'path'
-
-const app = new Hono()
-
-// Serve static files
-app.use('/static/*', serveStatic({ root: './public' }))
-
-// Serve index.html for root and any other routes (SPA)
-app.get('*', async (c) => {
-  // In development, read from public/index.html
-  // In production (after build), this will be bundled
-  try {
-    // Try to serve as static file first
-    if (c.req.path.startsWith('/static/')) {
-      return serveStatic({ root: './public' })(c, async () => {})
-    }
-    
-    // Serve index.html for all other routes
-    return c.html(`<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -543,10 +522,4 @@ app.get('*', async (c) => {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="/static/app.js" type="module"></script>
 </body>
-</html>`)
-  } catch (error) {
-    return c.text('Error loading application', 500)
-  }
-})
-
-export default app
+</html>
