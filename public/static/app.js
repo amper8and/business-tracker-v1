@@ -1665,6 +1665,9 @@ const App = {
     }
 };
 
+// Expose App to global scope for onclick handlers
+window.App = App;
+
 // ====================
 // Initialize on page load
 // ====================
