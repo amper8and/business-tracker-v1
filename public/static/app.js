@@ -28,6 +28,7 @@ const STATE = {
     currentUser: null,
     currentLevel: 1,
     currentView: null,
+    globalBusinessFilter: 'company', // company, Content, or Channel
     users: [],
     masteryData: [],
     coursesList: [],
@@ -483,6 +484,12 @@ const App = {
         // Change password
         document.getElementById('change-password-btn').addEventListener('click', () => this.showChangePasswordModal());
         
+        // Global Business Category Filter
+        document.getElementById('global-business-filter').addEventListener('change', (e) => {
+            STATE.globalBusinessFilter = e.target.value;
+            this.applyGlobalBusinessFilter();
+        });
+        
         // Level 1 boxes click handlers
         document.querySelectorAll('.capability-box').forEach(box => {
             box.addEventListener('click', (e) => {
@@ -569,6 +576,79 @@ const App = {
         this.updateCapabilityStats();
     },
     
+    applyGlobalBusinessFilter() {
+        // This function is called when the global business category filter changes
+        console.log('Applying global business filter:', STATE.globalBusinessFilter);
+        
+        // Update scorecard data with new filter
+        this.updateScorecardData();
+        
+        // If in Level 2 views, refresh them
+        if (STATE.currentLevel === 2) {
+            if (STATE.currentView === 'mastery') {
+                this.filterMasteryTable();
+            } else if (STATE.currentView === 'kanban') {
+                this.renderKanban();
+            }
+        }
+    },
+    
+    getFilteredUsers() {
+        // Get users based on global business filter
+        if (STATE.globalBusinessFilter === 'company') {
+            return STATE.users;
+        } else if (STATE.globalBusinessFilter === 'Content') {
+            return STATE.users.filter(u => u.contentBusiness);
+        } else if (STATE.globalBusinessFilter === 'Channel') {
+            return STATE.users.filter(u => u.channelBusiness);
+        }
+        return STATE.users;
+    },
+    
+    getFilteredMasteryData() {
+        // Get mastery data based on global business filter
+        const filteredUsers = this.getFilteredUsers();
+        const usernames = filteredUsers.map(u => u.username);
+        
+        let data = STATE.masteryData.filter(m => usernames.includes(m.username));
+        
+        // Apply user permissions on top of business filter
+        if (STATE.currentUser.type === 'User') {
+            data = data.filter(m => m.username === STATE.currentUser.username);
+        } else if (STATE.currentUser.type === 'Lead') {
+            const category = STATE.currentUser.contentBusiness ? 'Content' : 'Channel';
+            const categoryUsers = STATE.users.filter(u => {
+                return category === 'Content' ? u.contentBusiness : u.channelBusiness;
+            }).map(u => u.username);
+            data = data.filter(m => categoryUsers.includes(m.username));
+        }
+        
+        return data;
+    },
+    
+    getFilteredKanbanCards() {
+        // Get kanban cards based on global business filter
+        let cards = STATE.kanbanCards;
+        
+        // Apply global business filter
+        if (STATE.globalBusinessFilter === 'Content') {
+            cards = cards.filter(c => c.category === 'Content');
+        } else if (STATE.globalBusinessFilter === 'Channel') {
+            cards = cards.filter(c => c.category === 'Channel');
+        }
+        // 'company' shows all cards
+        
+        // Apply user permissions on top of business filter
+        if (STATE.currentUser.type === 'User') {
+            cards = cards.filter(c => c.owner === STATE.currentUser.username);
+        } else if (STATE.currentUser.type === 'Lead') {
+            const category = STATE.currentUser.contentBusiness ? 'Content' : 'Channel';
+            cards = cards.filter(c => c.category === category);
+        }
+        
+        return cards;
+    },
+    
     updateMasteryStats() {
         // Calculate learning hours by category
         const stats = {
@@ -578,18 +658,8 @@ const App = {
             'Compliance': 0
         };
         
-        // Filter by user permissions
-        let filteredData = STATE.masteryData;
-        if (STATE.currentUser.type === 'User') {
-            filteredData = filteredData.filter(m => m.username === STATE.currentUser.username);
-        } else if (STATE.currentUser.type === 'Lead') {
-            const category = STATE.currentUser.contentBusiness ? 'Content' : 'Channel';
-            // Filter by business category users
-            const categoryUsers = STATE.users.filter(u => {
-                return category === 'Content' ? u.contentBusiness : u.channelBusiness;
-            }).map(u => u.username);
-            filteredData = filteredData.filter(m => categoryUsers.includes(m.username));
-        }
+        // Use filtered data based on global business filter
+        const filteredData = this.getFilteredMasteryData();
         
         // Count hours (assume each completed course = 10 hours)
         filteredData.forEach(m => {
@@ -626,16 +696,8 @@ const App = {
             };
             const capFilter = capMap[capName];
             
-            // Filter cards
-            let cards = STATE.kanbanCards.filter(c => c.capability === capFilter);
-            
-            // Apply user permissions
-            if (STATE.currentUser.type === 'User') {
-                cards = cards.filter(c => c.owner === STATE.currentUser.username);
-            } else if (STATE.currentUser.type === 'Lead') {
-                const category = STATE.currentUser.contentBusiness ? 'Content' : 'Channel';
-                cards = cards.filter(c => c.category === category);
-            }
+            // Use filtered cards based on global business filter
+            let cards = this.getFilteredKanbanCards().filter(c => c.capability === capFilter);
             
             // Calculate percentages
             const total = cards.length;
@@ -780,21 +842,10 @@ const App = {
     renderMasteryTable() {
         const tbody = document.getElementById('mastery-table-body');
         
-        // Filter data
-        let data = [...STATE.masteryData];
+        // Start with filtered data based on global business filter and user permissions
+        let data = this.getFilteredMasteryData();
         
-        // Apply user permissions
-        if (STATE.currentUser.type === 'User') {
-            data = data.filter(m => m.username === STATE.currentUser.username);
-        } else if (STATE.currentUser.type === 'Lead') {
-            const category = STATE.currentUser.contentBusiness ? 'Content' : 'Channel';
-            const categoryUsers = STATE.users.filter(u => {
-                return category === 'Content' ? u.contentBusiness : u.channelBusiness;
-            }).map(u => u.username);
-            data = data.filter(m => categoryUsers.includes(m.username));
-        }
-        
-        // Apply filters
+        // Apply additional mastery-specific filters
         if (STATE.filters.mastery.username) {
             data = data.filter(m => m.username === STATE.filters.mastery.username);
         }
@@ -1086,10 +1137,10 @@ const App = {
         STATE.filters.kanban.category = Array.from(catFilter.selectedOptions).map(o => o.value);
         STATE.filters.kanban.owner = Array.from(ownerFilter.selectedOptions).map(o => o.value);
         
-        // Filter cards
-        let cards = [...STATE.kanbanCards];
+        // Start with filtered cards based on global business filter and user permissions
+        let cards = this.getFilteredKanbanCards();
         
-        // Apply filters
+        // Apply additional Kanban-specific filters
         if (STATE.filters.kanban.capability.length > 0) {
             cards = cards.filter(c => STATE.filters.kanban.capability.includes(c.capability));
         }
