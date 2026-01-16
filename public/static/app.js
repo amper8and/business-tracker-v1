@@ -197,7 +197,7 @@ const Auth = {
             return true;
         }
         
-        // Load users data
+        // Load users data from localStorage
         await this.loadUsers();
         
         // Show login screen
@@ -211,45 +211,86 @@ const Auth = {
     },
     
     async loadUsers() {
-        const data = await SheetsAPI.fetchSheet(
-            CONFIG.SHEETS.USERS,
-            CONFIG.SHEET_TABS.USERS
-        );
+        // Load users from localStorage
+        const stored = localStorage.getItem('users');
         
-        console.log('Raw user data from sheet (first 3 rows):', data.slice(0, 3));
-        
-        // Debug: Check what columns are actually available
-        if (data.length > 1) {
-            console.log('Available column names:', Object.keys(data[1]));
-            console.log('First user row raw data:', data[1]);
-        }
-        
-        // Skip header row and map to user objects
-        // Based on Google Sheet structure: Column0=Username, Column1=Password, Column2=Type, Column3=Content, Column4=Channel, Column5=Last Login
-        STATE.users = data.slice(1).map((row, index) => {
-            const username = row['Column0'] || '';
-            const password = row['Column1'] || '';
-            const name = username; // No separate name column in sheet
-            const type = (row['Column2'] || 'User').trim();
-            const content = (row['Column3'] || '').trim().toLowerCase();
-            const channel = (row['Column4'] || '').trim().toLowerCase();
-            const contentBusiness = content === 'yes';
-            const channelBusiness = channel === 'yes';
-            const lastLogin = row['Column5'] || '';
+        if (stored) {
+            STATE.users = JSON.parse(stored);
+            console.log('Loaded users from localStorage:', STATE.users.length, 'users');
+        } else {
+            // First time - initialize with default users migrated from Google Sheet
+            console.log('Initializing users for first time from Google Sheet data...');
+            STATE.users = [
+                {
+                    id: 'user-1',
+                    username: 'Pelayo',
+                    password: 'password123',
+                    name: 'Pelayo',
+                    type: 'Admin',
+                    contentBusiness: true,
+                    channelBusiness: true,
+                    lastLogin: ''
+                },
+                {
+                    id: 'user-2',
+                    username: 'Charlotte',
+                    password: 'password123',
+                    name: 'Charlotte',
+                    type: 'Lead',
+                    contentBusiness: true,
+                    channelBusiness: false,
+                    lastLogin: ''
+                },
+                {
+                    id: 'user-3',
+                    username: 'Vambai',
+                    password: 'password123',
+                    name: 'Vambai',
+                    type: 'Lead',
+                    contentBusiness: false,
+                    channelBusiness: true,
+                    lastLogin: ''
+                },
+                {
+                    id: 'user-4',
+                    username: 'Comfort',
+                    password: 'password123',
+                    name: 'Comfort',
+                    type: 'User',
+                    contentBusiness: true,
+                    channelBusiness: false,
+                    lastLogin: ''
+                },
+                {
+                    id: 'user-5',
+                    username: 'Kudzanai',
+                    password: 'password123',
+                    name: 'Kudzanai',
+                    type: 'User',
+                    contentBusiness: false,
+                    channelBusiness: true,
+                    lastLogin: ''
+                },
+                {
+                    id: 'user-6',
+                    username: 'Unesu',
+                    password: 'password123',
+                    name: 'Unesu',
+                    type: 'Admin',
+                    contentBusiness: true,
+                    channelBusiness: true,
+                    lastLogin: ''
+                }
+            ];
             
-            return {
-                rowIndex: index + 2,
-                username: username,
-                password: password,
-                name: name,
-                type: type,
-                contentBusiness: contentBusiness,
-                channelBusiness: channelBusiness,
-                lastLogin: lastLogin
-            };
-        }).filter(u => u.username); // Filter out empty rows
-        
-        console.log('Parsed users:', STATE.users.map(u => ({ username: u.username, name: u.name, type: u.type, content: u.contentBusiness, channel: u.channelBusiness })));
+            this.saveUsers();
+            console.log('Initialized', STATE.users.length, 'users');
+        }
+    },
+    
+    saveUsers() {
+        localStorage.setItem('users', JSON.stringify(STATE.users));
+        console.log('Saved users to localStorage');
     },
     
     setupLoginForm() {
@@ -279,7 +320,10 @@ const Auth = {
                 return;
             }
             
-            // Update last login (in production, would call Apps Script)
+            // Update last login timestamp
+            user.lastLogin = new Date().toISOString();
+            this.saveUsers();
+            
             console.log('User logged in:', user.username, 'Type:', user.type, 'Type length:', user.type.length);
             
             // Store user session
@@ -483,6 +527,24 @@ const App = {
         
         // Change password
         document.getElementById('change-password-btn').addEventListener('click', () => this.showChangePasswordModal());
+        
+        // Manage Users (Admin only)
+        document.getElementById('manage-users-btn').addEventListener('click', () => this.showUserManagement());
+        if (STATE.currentUser.type === 'Admin') {
+            Utils.show('manage-users-btn');
+        }
+        
+        // Add user button
+        document.getElementById('add-user-btn').addEventListener('click', () => this.showEditUserModal());
+        
+        // Save user button
+        document.getElementById('save-user-btn').addEventListener('click', () => this.saveUser());
+        
+        // Delete user button
+        document.getElementById('delete-user-btn').addEventListener('click', () => {
+            const userId = document.getElementById('edit-user-id').value;
+            this.deleteUser(userId);
+        });
         
         // Global Business Category Filter
         document.getElementById('global-business-filter').addEventListener('change', (e) => {
@@ -777,14 +839,194 @@ const App = {
             return;
         }
         
-        // Update password (in production, would call Apps Script)
-        STATE.currentUser.password = newPass;
-        sessionStorage.setItem('currentUser', JSON.stringify(STATE.currentUser));
+        // Update password in local storage
+        const userIndex = STATE.users.findIndex(u => u.id === STATE.currentUser.id);
+        if (userIndex !== -1) {
+            STATE.users[userIndex].password = newPass;
+            STATE.currentUser.password = newPass;
+            Auth.saveUsers();
+            sessionStorage.setItem('currentUser', JSON.stringify(STATE.currentUser));
+        }
         
         console.log('Password changed for:', STATE.currentUser.username);
         
         Utils.hide('change-password-modal');
         alert('Password changed successfully!');
+    },
+    
+    // User Management (Admin Only)
+    showUserManagement() {
+        if (STATE.currentUser.type !== 'Admin') {
+            alert('Only administrators can manage users');
+            return;
+        }
+        
+        Utils.show('user-management-modal');
+        this.renderUsersTable();
+    },
+    
+    renderUsersTable() {
+        const tbody = document.getElementById('users-table-body');
+        
+        if (STATE.users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="no-data">No users found</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = STATE.users.map(user => {
+            const lastLogin = user.lastLogin ? 
+                `<span class="last-login">${new Date(user.lastLogin).toLocaleString()}</span>` :
+                '<span class="never-logged-in">Never logged in</span>';
+            
+            return `
+                <tr>
+                    <td>${Utils.escapeHtml(user.username)}</td>
+                    <td>${'*'.repeat(8)}</td>
+                    <td><span class="badge badge-${user.type.toLowerCase()}">${user.type}</span></td>
+                    <td>${user.contentBusiness ? '<i class="fas fa-check text-success"></i>' : '<i class="fas fa-times text-muted"></i>'}</td>
+                    <td>${user.channelBusiness ? '<i class="fas fa-check text-success"></i>' : '<i class="fas fa-times text-muted"></i>'}</td>
+                    <td>${lastLogin}</td>
+                    <td class="action-buttons">
+                        <button class="btn-icon" onclick="App.editUser('${user.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon delete" onclick="App.deleteUser('${user.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    },
+    
+    showEditUserModal(userId = null) {
+        Utils.show('edit-user-modal');
+        
+        const titleEl = document.getElementById('edit-user-modal-title');
+        const deleteBtn = document.getElementById('delete-user-btn');
+        
+        if (userId) {
+            const user = STATE.users.find(u => u.id === userId);
+            if (!user) return;
+            
+            titleEl.textContent = 'Edit User';
+            document.getElementById('edit-user-id').value = user.id;
+            document.getElementById('edit-user-username').value = user.username;
+            document.getElementById('edit-user-password').value = user.password;
+            document.getElementById('edit-user-type').value = user.type;
+            document.getElementById('edit-user-content').checked = user.contentBusiness;
+            document.getElementById('edit-user-channel').checked = user.channelBusiness;
+            Utils.show(deleteBtn);
+        } else {
+            titleEl.textContent = 'Add New User';
+            document.getElementById('edit-user-id').value = '';
+            document.getElementById('edit-user-username').value = '';
+            document.getElementById('edit-user-password').value = 'password123';
+            document.getElementById('edit-user-type').value = 'User';
+            document.getElementById('edit-user-content').checked = false;
+            document.getElementById('edit-user-channel').checked = false;
+            Utils.hide(deleteBtn);
+        }
+    },
+    
+    editUser(userId) {
+        this.showEditUserModal(userId);
+    },
+    
+    saveUser() {
+        const userId = document.getElementById('edit-user-id').value;
+        const username = document.getElementById('edit-user-username').value.trim();
+        const password = document.getElementById('edit-user-password').value.trim();
+        const type = document.getElementById('edit-user-type').value;
+        const contentBusiness = document.getElementById('edit-user-content').checked;
+        const channelBusiness = document.getElementById('edit-user-channel').checked;
+        
+        if (!username || !password) {
+            alert('Username and password are required');
+            return;
+        }
+        
+        if (password.length < 4) {
+            alert('Password must be at least 4 characters');
+            return;
+        }
+        
+        // Check for duplicate username (excluding current user)
+        const duplicate = STATE.users.find(u => 
+            u.username.toLowerCase() === username.toLowerCase() && 
+            u.id !== userId
+        );
+        
+        if (duplicate) {
+            alert('Username already exists');
+            return;
+        }
+        
+        if (userId) {
+            // Update existing user
+            const userIndex = STATE.users.findIndex(u => u.id === userId);
+            if (userIndex !== -1) {
+                STATE.users[userIndex] = {
+                    ...STATE.users[userIndex],
+                    username,
+                    password,
+                    name: username,
+                    type,
+                    contentBusiness,
+                    channelBusiness
+                };
+                
+                // Update current user if editing self
+                if (STATE.currentUser.id === userId) {
+                    STATE.currentUser = STATE.users[userIndex];
+                    sessionStorage.setItem('currentUser', JSON.stringify(STATE.currentUser));
+                }
+            }
+        } else {
+            // Create new user
+            const newUser = {
+                id: 'user-' + Date.now(),
+                username,
+                password,
+                name: username,
+                type,
+                contentBusiness,
+                channelBusiness,
+                lastLogin: ''
+            };
+            STATE.users.push(newUser);
+        }
+        
+        Auth.saveUsers();
+        this.renderUsersTable();
+        Utils.hide('edit-user-modal');
+        alert('User saved successfully!');
+    },
+    
+    deleteUser(userId) {
+        if (!confirm('Are you sure you want to delete this user?')) {
+            return;
+        }
+        
+        // Prevent deleting self
+        if (STATE.currentUser.id === userId) {
+            alert('You cannot delete your own account');
+            return;
+        }
+        
+        // Prevent deleting last admin
+        const admins = STATE.users.filter(u => u.type === 'Admin');
+        const userToDelete = STATE.users.find(u => u.id === userId);
+        if (userToDelete && userToDelete.type === 'Admin' && admins.length === 1) {
+            alert('Cannot delete the last administrator account');
+            return;
+        }
+        
+        STATE.users = STATE.users.filter(u => u.id !== userId);
+        Auth.saveUsers();
+        this.renderUsersTable();
+        Utils.hide('edit-user-modal');
+        alert('User deleted successfully!');
     },
     
     // Mastery View

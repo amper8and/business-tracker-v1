@@ -1093,3 +1093,66 @@ input, select, textarea {
 .hidden {
     display: none !important;
 }
+
+/* ===================== */
+/* User Management */
+/* ===================== */
+.user-management-header {
+    margin-bottom: var(--spacing-lg);
+    display: flex;
+    justify-content: flex-end;
+}
+
+#users-table {
+    width: 100%;
+}
+
+#users-table th:nth-child(1) { width: 15%; } /* Username */
+#users-table th:nth-child(2) { width: 15%; } /* Password */
+#users-table th:nth-child(3) { width: 10%; } /* Type */
+#users-table th:nth-child(4) { width: 12%; } /* Content */
+#users-table th:nth-child(5) { width: 12%; } /* Channel */
+#users-table th:nth-child(6) { width: 18%; } /* Last Login */
+#users-table th:nth-child(7) { width: 18%; } /* Actions */
+
+#users-table .last-login {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+#users-table .never-logged-in {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.badge-admin {
+    background: #e76f51;
+    color: white;
+}
+
+.badge-lead {
+    background: #f4a261;
+    color: white;
+}
+
+.badge-user {
+    background: #2a9d8f;
+    color: white;
+}
+
+.text-success {
+    color: #52c41a;
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
