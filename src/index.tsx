@@ -84,17 +84,10 @@ app.get('*', async (c) => {
             </div>
         </header>
 
-        <!-- Breadcrumb -->
-        <nav class="breadcrumb">
-            <span id="breadcrumb-content">Business Review Scorecard</span>
-        </nav>
-
         <!-- Main Content -->
         <main class="app-content">
             <!-- Level 1: Business Review Scorecard -->
             <div id="level-1" class="level-container">
-                <h2 class="section-title">Business Review Scorecard</h2>
-                
                 <div class="scorecard-grid">
                     <!-- Activation Row -->
                     <div class="scorecard-row activation-row">
