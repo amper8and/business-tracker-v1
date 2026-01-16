@@ -647,7 +647,8 @@ input, select, textarea {
 .table-container {
     background: var(--surface);
     border-radius: var(--radius-lg);
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: visible;
     box-shadow: var(--shadow-md);
 }
 
@@ -918,7 +919,8 @@ input, select, textarea {
 }
 
 .modal-content.modal-large {
-    max-width: 800px;
+    max-width: 1000px;
+    width: 95%;
 }
 
 .modal-header {
@@ -1105,15 +1107,16 @@ input, select, textarea {
 
 #users-table {
     width: 100%;
+    min-width: 900px;
 }
 
-#users-table th:nth-child(1) { width: 15%; } /* Username */
-#users-table th:nth-child(2) { width: 15%; } /* Password */
+#users-table th:nth-child(1) { width: 12%; } /* Username */
+#users-table th:nth-child(2) { width: 12%; } /* Password */
 #users-table th:nth-child(3) { width: 10%; } /* Type */
 #users-table th:nth-child(4) { width: 12%; } /* Content */
 #users-table th:nth-child(5) { width: 12%; } /* Channel */
-#users-table th:nth-child(6) { width: 18%; } /* Last Login */
-#users-table th:nth-child(7) { width: 18%; } /* Actions */
+#users-table th:nth-child(6) { width: 20%; } /* Last Login */
+#users-table th:nth-child(7) { width: 22%; } /* Actions */
 
 #users-table .last-login {
     font-size: 12px;
