@@ -1240,7 +1240,6 @@ const App = {
         
         console.log('Course dropdown option count:', courseSelect.options.length);
         console.log('=== showCourseModal username/course setup END ===');
-        });
         
         if (courseRow) {
             // Edit mode
