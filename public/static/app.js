@@ -618,16 +618,6 @@ const App = {
         document.getElementById('add-library-course-btn').addEventListener('click', () => this.showLibraryCourseModal());
         document.getElementById('save-library-course-btn').addEventListener('click', () => this.saveLibraryCourse());
         
-        // Course library tabs
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                const category = e.target.getAttribute('data-category');
-                this.filterCourseLibrary(category);
-            });
-        });
-        
         // Open course library link from course modal
         document.getElementById('open-course-library-link')?.addEventListener('click', (e) => {
             e.preventDefault();
@@ -1108,35 +1098,24 @@ const App = {
     setupMasteryFilters() {
         console.log('Setting up mastery filters. STATE.users:', STATE.users.length, 'users');
         
-        // Username filter
+        // Username filter - Show ALL users for filtering purposes
         const usernameFilter = document.getElementById('mastery-filter-username');
-        usernameFilter.innerHTML = '<option value="">All Users</option>';
-        
-        // Filter users based on permissions
-        let availableUsers = STATE.users;
-        if (STATE.currentUser.type === 'User') {
-            availableUsers = STATE.users.filter(u => u.username === STATE.currentUser.username);
-        } else if (STATE.currentUser.type === 'Lead') {
-            const category = STATE.currentUser.contentBusiness ? 'Content' : 'Channel';
-            availableUsers = STATE.users.filter(u => {
-                return category === 'Content' ? u.contentBusiness : u.channelBusiness;
-            });
+        if (!usernameFilter) {
+            console.error('mastery-filter-username element not found');
+            return;
         }
         
-        console.log('Available users for filter:', availableUsers.length);
+        usernameFilter.innerHTML = '<option value="">All Users</option>';
         
-        availableUsers.forEach(user => {
+        // Show all users in dropdown (filtering is just for display, not access control)
+        STATE.users.forEach(user => {
             const option = document.createElement('option');
             option.value = user.username;
-            option.textContent = user.name;
+            option.textContent = user.name || user.username;
             usernameFilter.appendChild(option);
         });
         
-        // Set initial filter
-        if (STATE.currentUser.type === 'User') {
-            usernameFilter.value = STATE.currentUser.username;
-            usernameFilter.disabled = true;
-        }
+        console.log('Username filter populated with', STATE.users.length, 'users');
     },
     
     filterMasteryTable() {
@@ -1196,29 +1175,30 @@ const App = {
     showCourseModal(courseRow = null) {
         Utils.show('course-modal');
         
-        // Setup username dropdown
+        // Setup username dropdown - Show ALL users
         const usernameSelect = document.getElementById('course-username');
-        usernameSelect.innerHTML = '';
-        
-        let availableUsers = STATE.users;
-        if (STATE.currentUser.type === 'User') {
-            availableUsers = [STATE.currentUser];
-        } else if (STATE.currentUser.type === 'Lead') {
-            const category = STATE.currentUser.contentBusiness ? 'Content' : 'Channel';
-            availableUsers = STATE.users.filter(u => {
-                return category === 'Content' ? u.contentBusiness : u.channelBusiness;
-            });
+        if (!usernameSelect) {
+            console.error('course-username element not found');
+            return;
         }
         
-        availableUsers.forEach(user => {
+        usernameSelect.innerHTML = '';
+        
+        // Show all users in dropdown (filtering is just for display, not access control)
+        STATE.users.forEach(user => {
             const option = document.createElement('option');
             option.value = user.username;
-            option.textContent = user.name;
+            option.textContent = user.name || user.username;
             usernameSelect.appendChild(option);
         });
         
         // Setup course dropdown from library
         const courseSelect = document.getElementById('course-name');
+        if (!courseSelect) {
+            console.error('course-name element not found');
+            return;
+        }
+        
         courseSelect.innerHTML = '<option value="">Select a course</option>';
         
         // Sort courses alphabetically
@@ -1249,9 +1229,8 @@ const App = {
             document.getElementById('course-modal-title').textContent = 'Add Course Activity';
             document.getElementById('course-row-id').value = '';
             document.getElementById('course-form').reset();
-            if (STATE.currentUser.type === 'User') {
-                document.getElementById('course-username').value = STATE.currentUser.username;
-            }
+            // Pre-select current user
+            document.getElementById('course-username').value = STATE.currentUser.username;
         }
     },
     
@@ -1590,48 +1569,26 @@ const App = {
     },
     
     setupKanbanFilters() {
-        // Owner filter
-        const ownerFilter = document.getElementById('kanban-filter-owner');
-        ownerFilter.innerHTML = '';
-        
         console.log('Setting up kanban filters. Total users:', STATE.users.length);
-        console.log('Sample user:', STATE.users[0]);
         
-        let availableUsers = STATE.users;
-        if (STATE.currentUser.type.trim() === 'User') {
-            availableUsers = [STATE.currentUser];
-        } else if (STATE.currentUser.type.trim() === 'Lead') {
-            const category = STATE.currentUser.contentBusiness ? 'Content' : 'Channel';
-            availableUsers = STATE.users.filter(u => {
-                return category === 'Content' ? u.contentBusiness : u.channelBusiness;
-            });
+        // Owner filter - Show ALL users for filtering purposes
+        const ownerFilter = document.getElementById('kanban-filter-owner');
+        if (!ownerFilter) {
+            console.error('kanban-filter-owner element not found');
+            return;
         }
         
-        console.log('Available users for owner filter:', availableUsers.map(u => ({ username: u.username, name: u.name, type: u.type })));
+        ownerFilter.innerHTML = '';
         
-        availableUsers.forEach(user => {
+        // Show all users in dropdown (filtering is just for display, not access control)
+        STATE.users.forEach(user => {
             const option = document.createElement('option');
             option.value = user.username;
-            option.textContent = user.name;
-            console.log('Adding owner option:', { value: user.username, text: user.name });
+            option.textContent = user.name || user.username;
             ownerFilter.appendChild(option);
         });
         
-        // Apply user-based filters
-        if (STATE.currentUser.type === 'User') {
-            STATE.filters.kanban.owner = [STATE.currentUser.username];
-            ownerFilter.value = STATE.currentUser.username;
-            Array.from(ownerFilter.options).forEach(opt => {
-                opt.selected = opt.value === STATE.currentUser.username;
-            });
-        } else if (STATE.currentUser.type === 'Lead') {
-            const category = STATE.currentUser.contentBusiness ? 'Content' : 'Channel';
-            STATE.filters.kanban.category = [category];
-            const catFilter = document.getElementById('kanban-filter-category');
-            Array.from(catFilter.options).forEach(opt => {
-                opt.selected = opt.value === category;
-            });
-        }
+        console.log('Owner filter populated with', STATE.users.length, 'users');
     },
     
     renderKanban() {
@@ -1788,24 +1745,20 @@ const App = {
     showCardModal(cardId = null) {
         Utils.show('card-modal');
         
-        // Setup owner dropdown
+        // Setup owner dropdown - Show ALL users
         const ownerSelect = document.getElementById('card-owner');
-        ownerSelect.innerHTML = '';
-        
-        let availableUsers = STATE.users;
-        if (STATE.currentUser.type === 'User') {
-            availableUsers = [STATE.currentUser];
-        } else if (STATE.currentUser.type === 'Lead') {
-            const category = STATE.currentUser.contentBusiness ? 'Content' : 'Channel';
-            availableUsers = STATE.users.filter(u => {
-                return category === 'Content' ? u.contentBusiness : u.channelBusiness;
-            });
+        if (!ownerSelect) {
+            console.error('card-owner element not found');
+            return;
         }
         
-        availableUsers.forEach(user => {
+        ownerSelect.innerHTML = '';
+        
+        // Show all users in dropdown (filtering is just for display, not access control)
+        STATE.users.forEach(user => {
             const option = document.createElement('option');
             option.value = user.username;
-            option.textContent = user.name;
+            option.textContent = user.name || user.username;
             ownerSelect.appendChild(option);
         });
         
