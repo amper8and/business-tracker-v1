@@ -24,7 +24,7 @@ app.get('*', async (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DrumTree Business Tracker</title>
+    <title>Business Tracker</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,7 +41,7 @@ app.get('*', async (c) => {
     <!-- Loading Screen -->
     <div id="loading-screen" class="loading-screen">
         <div class="loading-spinner"></div>
-        <p>Loading DrumTree Business Tracker...</p>
+        <p>Loading Business Tracker...</p>
     </div>
 
     <!-- Login Screen -->
@@ -71,7 +71,7 @@ app.get('*', async (c) => {
         <!-- Header -->
         <header class="app-header">
             <div class="header-left">
-                <h1 class="app-title">DrumTree Business Tracker</h1>
+                <h1 class="app-title">Business Tracker</h1>
             </div>
             <div class="header-center">
                 <div class="business-category-filter">
