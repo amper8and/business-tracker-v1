@@ -189,6 +189,9 @@ const SheetsAPI = {
 // ====================
 const Auth = {
     async init() {
+        // Always load users first
+        await this.loadUsers();
+        
         // Check if user is already logged in (session storage)
         const stored = sessionStorage.getItem('currentUser');
         if (stored) {
@@ -196,9 +199,6 @@ const Auth = {
             this.showApp();
             return true;
         }
-        
-        // Load users data from localStorage
-        await this.loadUsers();
         
         // Show login screen
         Utils.hide('loading-screen');
@@ -1111,6 +1111,8 @@ const App = {
     },
     
     setupMasteryFilters() {
+        console.log('Setting up mastery filters. STATE.users:', STATE.users.length, 'users');
+        
         // Username filter
         const usernameFilter = document.getElementById('mastery-filter-username');
         usernameFilter.innerHTML = '<option value="">All Users</option>';
@@ -1125,6 +1127,8 @@ const App = {
                 return category === 'Content' ? u.contentBusiness : u.channelBusiness;
             });
         }
+        
+        console.log('Available users for filter:', availableUsers.length);
         
         availableUsers.forEach(user => {
             const option = document.createElement('option');
