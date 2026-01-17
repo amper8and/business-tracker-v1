@@ -1240,30 +1240,18 @@ const App = {
         
         console.log('Username dropdown option count:', usernameSelect.options.length);
         
-        // Setup course dropdown from library
-        const courseSelect = document.getElementById('course-name');
-        console.log('courseSelect element:', courseSelect);
-        
-        if (!courseSelect) {
-            console.error('ERROR: course-name element not found');
-            return;
+        // Setup category change listener to filter courses
+        const categorySelect = document.getElementById('course-category');
+        if (categorySelect) {
+            // Remove existing listener if any
+            categorySelect.removeEventListener('change', this.filterCoursesByCategory);
+            // Add new listener
+            categorySelect.addEventListener('change', () => this.filterCoursesByCategory());
         }
         
-        courseSelect.innerHTML = '<option value="">Select a course</option>';
+        // Initial course dropdown population (will be empty until category is selected)
+        this.filterCoursesByCategory();
         
-        // Sort courses alphabetically
-        const sortedCourses = [...STATE.coursesList].sort((a, b) => a.name.localeCompare(b.name));
-        sortedCourses.forEach((course, index) => {
-            const option = document.createElement('option');
-            option.value = course.name;
-            option.textContent = course.name;
-            courseSelect.appendChild(option);
-            if (index < 3) {
-                console.log(`Added course ${index + 1}:`, course.name);
-            }
-        });
-        
-        console.log('Course dropdown option count:', courseSelect.options.length);
         console.log('=== showCourseModal username/course setup END ===');
         
         if (courseRow) {
@@ -1274,6 +1262,10 @@ const App = {
                 document.getElementById('course-row-id').value = course.id;
                 document.getElementById('course-username').value = course.username;
                 document.getElementById('course-category').value = course.category;
+                
+                // Filter courses by category before setting course value
+                this.filterCoursesByCategory();
+                
                 document.getElementById('course-name').value = course.course;
                 document.getElementById('course-completion').value = course.completion;
                 document.getElementById('course-initiated').value = Utils.formatDate(course.initiated);
@@ -1287,7 +1279,67 @@ const App = {
             document.getElementById('course-form').reset();
             // Pre-select current user
             document.getElementById('course-username').value = STATE.currentUser.username;
+            // Clear courses since no category selected yet
+            this.filterCoursesByCategory();
         }
+    },
+    
+    filterCoursesByCategory() {
+        console.log('=== filterCoursesByCategory called ===');
+        
+        const categorySelect = document.getElementById('course-category');
+        const courseSelect = document.getElementById('course-name');
+        
+        if (!categorySelect || !courseSelect) {
+            console.error('Category or course select not found');
+            return;
+        }
+        
+        const selectedCategory = categorySelect.value;
+        console.log('Selected category:', selectedCategory);
+        
+        // Clear current options
+        courseSelect.innerHTML = '<option value="">Select a course</option>';
+        
+        if (!selectedCategory) {
+            // No category selected, show message
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Please select a category first';
+            option.disabled = true;
+            courseSelect.appendChild(option);
+            console.log('No category selected');
+            return;
+        }
+        
+        // Filter courses by selected category
+        const filteredCourses = STATE.coursesList
+            .filter(course => course.category === selectedCategory)
+            .sort((a, b) => a.name.localeCompare(b.name));
+        
+        console.log(`Filtered ${filteredCourses.length} courses for category ${selectedCategory}`);
+        
+        if (filteredCourses.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No courses available in this category';
+            option.disabled = true;
+            courseSelect.appendChild(option);
+            return;
+        }
+        
+        // Populate dropdown with filtered courses
+        filteredCourses.forEach((course, index) => {
+            const option = document.createElement('option');
+            option.value = course.name;
+            option.textContent = course.name;
+            courseSelect.appendChild(option);
+            if (index < 3) {
+                console.log(`  Course ${index + 1}:`, course.name);
+            }
+        });
+        
+        console.log('Course dropdown populated with', filteredCourses.length, 'courses');
     },
     
     saveCourse() {
