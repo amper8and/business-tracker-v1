@@ -369,6 +369,11 @@ const Auth = {
 // ====================
 const App = {
     async init() {
+        console.log('App.init() called');
+        
+        // Wait for DOM to be fully ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Load all data
         await this.loadAllData();
         
@@ -377,6 +382,8 @@ const App = {
         
         // Show Level 1 (Scorecard)
         this.showLevel1();
+        
+        console.log('App.init() completed');
     },
     
     async loadAllData() {
@@ -652,6 +659,7 @@ const App = {
     },
     
     showLevel1() {
+        console.log('showLevel1() called');
         STATE.currentLevel = 1;
         STATE.currentView = null;
         
@@ -664,21 +672,32 @@ const App = {
         Utils.show('level-1');
         
         // Update breadcrumb
-        document.getElementById('breadcrumb-content').textContent = 'Business Review Scorecard';
+        const breadcrumb = document.getElementById('breadcrumb-content');
+        if (breadcrumb) {
+            breadcrumb.textContent = 'Business Review Scorecard';
+        } else {
+            console.warn('breadcrumb-content element not found');
+        }
         
         // Update scorecard data
         this.updateScorecardData();
     },
     
     updateScorecardData() {
+        console.log('updateScorecardData() called');
+        
         // Update performance KPIs
         if (STATE.performanceData) {
             const perfContent = document.getElementById('performance-content');
-            const kpis = perfContent.querySelectorAll('.kpi-value');
-            kpis[0].textContent = STATE.performanceData.mtdRevenue;
-            kpis[1].textContent = STATE.performanceData.actualRunRate;
-            kpis[2].textContent = STATE.performanceData.totalBase;
-            kpis[3].textContent = STATE.performanceData.revenueToday;
+            if (perfContent) {
+                const kpis = perfContent.querySelectorAll('.kpi-value');
+                if (kpis.length >= 4) {
+                    kpis[0].textContent = STATE.performanceData.mtdRevenue;
+                    kpis[1].textContent = STATE.performanceData.actualRunRate;
+                    kpis[2].textContent = STATE.performanceData.totalBase;
+                    kpis[3].textContent = STATE.performanceData.revenueToday;
+                }
+            }
         }
         
         // Update mastery stats
@@ -1081,6 +1100,7 @@ const App = {
     
     // Mastery View
     showMastery() {
+        console.log('showMastery() called');
         STATE.currentLevel = 2;
         STATE.currentView = 'mastery';
         
@@ -1089,7 +1109,12 @@ const App = {
         Utils.hide('level-2-kanban');
         Utils.show('level-2-mastery');
         
-        document.getElementById('breadcrumb-content').textContent = 'Business Review Scorecard > Mastery & Learning';
+        const breadcrumb = document.getElementById('breadcrumb-content');
+        if (breadcrumb) {
+            breadcrumb.textContent = 'Business Review Scorecard > Mastery & Learning';
+        } else {
+            console.warn('breadcrumb-content element not found in showMastery');
+        }
         
         this.setupMasteryFilters();
         this.renderMasteryTable();
@@ -1563,6 +1588,7 @@ const App = {
     
     // Kanban View
     showKanban(capability = null) {
+        console.log('showKanban() called with capability:', capability);
         STATE.currentLevel = 2;
         STATE.currentView = 'kanban';
         
@@ -1583,16 +1609,32 @@ const App = {
             
             // Update filter dropdown
             const capFilter = document.getElementById('kanban-filter-capability');
-            Array.from(capFilter.options).forEach(opt => {
-                opt.selected = opt.value === capMap[capability];
-            });
+            if (capFilter) {
+                Array.from(capFilter.options).forEach(opt => {
+                    opt.selected = opt.value === capMap[capability];
+                });
+            }
             
             // Update title
-            document.getElementById('kanban-title').textContent = `${capMap[capability]} Activities`;
-            document.getElementById('breadcrumb-content').textContent = `Business Review Scorecard > ${capMap[capability]}`;
+            const kanbanTitle = document.getElementById('kanban-title');
+            if (kanbanTitle) {
+                kanbanTitle.textContent = `${capMap[capability]} Activities`;
+            }
+            
+            const breadcrumb = document.getElementById('breadcrumb-content');
+            if (breadcrumb) {
+                breadcrumb.textContent = `Business Review Scorecard > ${capMap[capability]}`;
+            }
         } else {
-            document.getElementById('kanban-title').textContent = 'Activity Board';
-            document.getElementById('breadcrumb-content').textContent = 'Business Review Scorecard > Activity Board';
+            const kanbanTitle = document.getElementById('kanban-title');
+            if (kanbanTitle) {
+                kanbanTitle.textContent = 'Activity Board';
+            }
+            
+            const breadcrumb = document.getElementById('breadcrumb-content');
+            if (breadcrumb) {
+                breadcrumb.textContent = 'Business Review Scorecard > Activity Board';
+            }
         }
         
         this.setupKanbanFilters();
