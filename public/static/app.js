@@ -617,9 +617,6 @@ const App = {
         // Course library buttons
         document.getElementById('add-library-course-btn').addEventListener('click', () => this.showLibraryCourseModal());
         document.getElementById('save-library-course-btn').addEventListener('click', () => this.saveLibraryCourse());
-            const courseId = document.getElementById('edit-library-course-id').value;
-            this.deleteLibraryCourse(courseId);
-        });
         
         // Course library tabs
         document.querySelectorAll('.tab-btn').forEach(btn => {
