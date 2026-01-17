@@ -380,8 +380,11 @@ const App = {
     },
     
     async loadAllData() {
-        // Load mastery data
+        // Load mastery data (local)
         await this.loadMasteryData();
+        
+        // Load courses library (local)
+        await this.loadCoursesLibrary();
         
         // Load kanban data
         await this.loadKanbanData();
@@ -391,33 +394,66 @@ const App = {
     },
     
     async loadMasteryData() {
-        const data = await SheetsAPI.fetchSheet(
-            CONFIG.SHEETS.MASTERY,
-            CONFIG.SHEET_TABS.MASTERY_DASHBOARD
-        );
+        // Load mastery data from localStorage
+        const stored = localStorage.getItem('masteryData');
         
-        // Skip header row
-        STATE.masteryData = data.slice(1).map((row, index) => ({
-            rowIndex: index + 2,
-            username: row['Username'] || row['Column0'] || '',
-            category: row['Category'] || row['Column1'] || '',
-            course: row['Course'] || row['Column2'] || '',
-            completion: parseFloat(row['% Completion'] || row['Column3'] || 0),
-            initiated: row['Initiated'] || row['Column4'] || '',
-            updated: row['Updated'] || row['Column5'] || '',
-            concluded: row['Concluded'] || row['Column6'] || ''
-        })).filter(m => m.username);
+        if (stored) {
+            STATE.masteryData = JSON.parse(stored);
+            console.log('Loaded mastery data from localStorage:', STATE.masteryData.length, 'records');
+        } else {
+            // Initialize with empty data
+            STATE.masteryData = [];
+            this.saveMasteryData();
+            console.log('Initialized empty mastery data');
+        }
+    },
+    
+    saveMasteryData() {
+        localStorage.setItem('masteryData', JSON.stringify(STATE.masteryData));
+        console.log('Saved mastery data to localStorage');
+    },
+    
+    async loadCoursesLibrary() {
+        // Load courses library from localStorage
+        const stored = localStorage.getItem('coursesLibrary');
         
-        // Load courses list
-        const courses = await SheetsAPI.fetchSheet(
-            CONFIG.SHEETS.MASTERY,
-            CONFIG.SHEET_TABS.MASTERY_COURSES
-        );
-        
-        STATE.coursesList = courses.slice(1).map(row => ({
-            name: row['Course Name'] || row['Column0'] || '',
-            category: row['Category'] || row['Column1'] || ''
-        })).filter(c => c.name);
+        if (stored) {
+            STATE.coursesList = JSON.parse(stored);
+            console.log('Loaded courses library from localStorage:', STATE.coursesList.length, 'courses');
+        } else {
+            // Initialize with courses from Excel file
+            console.log('Initializing courses library from Excel data...');
+            STATE.coursesList = [
+                {"id":"course-18","name":"AI Ethics: Ethical Intelligence for 2026","category":"Compliance","url":"https://www.udemy.com/course/chatgpt-ai-ethics-ethical-intelligence/"},
+                {"id":"course-19","name":"Corporate Governance: Principles and Practice","category":"Compliance","url":"https://www.udemy.com/course/corporate-governance-k/"},
+                {"id":"course-20","name":"Employment Laws in South Africa","category":"Compliance","url":"https://www.udemy.com/course/human-resources-labour-law-employment-laws-in-south-africa/"},
+                {"id":"course-17","name":"Professional Ethics & Workplace Integrity Masterclass","category":"Compliance","url":"https://www.udemy.com/course/professional-ethics-mastery/"},
+                {"id":"course-16","name":"The Complete Cyber Security Awareness Training for Employees","category":"Compliance","url":"https://www.udemy.com/course/cybersecurity-for-corporate-employees/"},
+                {"id":"course-10","name":"Business Fundamentals: Marketing Strategy","category":"Function","url":"https://www.udemy.com/course/business-fundamentals-marketing-strategy/"},
+                {"id":"course-6","name":"Canva Master Course 2026","category":"Function","url":"https://www.udemy.com/course/canva-master-course-graphic-design-for-beginners/"},
+                {"id":"course-8","name":"Financial Reporeting & Analysis","category":"Function","url":"https://www.udemy.com/course/financial-reporting-analysis/"},
+                {"id":"course-7","name":"Management Consulting Presentation Essentials Training 2026","category":"Function","url":"https://www.udemy.com/course/management-consulting-presentation-mckinsey/"},
+                {"id":"course-9","name":"The Complete Digital Marketing Guide","category":"Function","url":"https://www.udemy.com/course/digital-marketing-guide/"},
+                {"id":"course-14","name":"Business Model Innovation For Business Growth","category":"Leadership","url":"https://www.udemy.com/course/part-1-business-innovation-for-brand-growth/"},
+                {"id":"course-11","name":"Communication, Leadership & Management","category":"Leadership","url":"https://www.udemy.com/course/high-impact-communication-skills/"},
+                {"id":"course-13","name":"Leadership: Growth Mindset for Leadership and Organizations","category":"Leadership","url":"https://www.udemy.com/course/growth-mindset-for-leadership-and-organizations/"},
+                {"id":"course-12","name":"Leadership: The Emotionally Intelligent Leader","category":"Leadership","url":"https://www.udemy.com/course/the-emotionally-intelligent-leader/"},
+                {"id":"course-15","name":"MBA in a Box: Business Lessons from a CEO","category":"Leadership","url":"https://www.udemy.com/course/mba-in-a-box-business-lessons-from-a-ceo/"},
+                {"id":"course-5","name":"Agentic AI for Beginners","category":"Technology","url":"https://www.udemy.com/course/agentic-ai-for-beginners/"},
+                {"id":"course-2","name":"Claude Code Beginner to Pro","category":"Technology","url":"https://www.udemy.com/course/learn-claude-code/"},
+                {"id":"course-3","name":"The Complete AI Coding Course (2025)","category":"Technology","url":"https://www.udemy.com/course/the-complete-ai-coding-course-2025-cursor-ai-v0-vercel/"},
+                {"id":"course-4","name":"The Complete AI Guide","category":"Technology","url":"https://www.udemy.com/course/complete-ai-guide/"},
+                {"id":"course-1","name":"Udemy: 100 Days of Code","category":"Technology","url":"https://www.udemy.com/course/100-days-of-code/"}
+            ];
+            
+            this.saveCoursesLibrary();
+            console.log('Initialized', STATE.coursesList.length, 'courses');
+        }
+    },
+    
+    saveCoursesLibrary() {
+        localStorage.setItem('coursesLibrary', JSON.stringify(STATE.coursesList));
+        console.log('Saved courses library to localStorage');
     },
     
     async loadKanbanData() {
@@ -574,12 +610,41 @@ const App = {
         document.getElementById('back-to-level-1-kanban').addEventListener('click', () => this.showLevel1());
         
         // Add buttons
-        document.getElementById('add-course-btn').addEventListener('click', () => this.showCourseModal());
+        document.getElementById('add-course-activity-btn').addEventListener('click', () => this.showCourseModal());
+        document.getElementById('course-library-btn').addEventListener('click', () => this.showCourseLibrary());
+        document.getElementById('course-library-btn').addEventListener('click', () => this.showCourseLibrary());
         document.getElementById('add-card-btn').addEventListener('click', () => this.showCardModal());
+        
+        // Course library buttons
+        document.getElementById('add-library-course-btn').addEventListener('click', () => this.showEditLibraryCourseModal());
+        document.getElementById('save-library-course-btn').addEventListener('click', () => this.saveLibraryCourse());
+        document.getElementById('delete-library-course-btn').addEventListener('click', () => {
+            const courseId = document.getElementById('edit-library-course-id').value;
+            this.deleteLibraryCourse(courseId);
+        });
+        
+        // Course library tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                const category = e.target.getAttribute('data-category');
+                this.filterCourseLibrary(category);
+            });
+        });
+        
+        // Open course library link from course modal
+        document.getElementById('open-course-library-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            Utils.hide('course-modal');
+            this.showCourseLibrary();
+        });
         
         // Save buttons
         document.getElementById('save-password-btn').addEventListener('click', () => this.savePassword());
         document.getElementById('save-course-btn').addEventListener('click', () => this.saveCourse());
+        document.getElementById('save-library-course-btn').addEventListener('click', () => this.saveLibraryCourse());
+        document.getElementById('add-library-course-btn').addEventListener('click', () => this.showLibraryCourseModal());
         document.getElementById('save-card-btn').addEventListener('click', () => this.saveCard());
         document.getElementById('delete-card-btn').addEventListener('click', () => this.deleteCard());
         
@@ -1101,25 +1166,32 @@ const App = {
             return;
         }
         
-        tbody.innerHTML = data.map(course => `
-            <tr>
-                <td>${Utils.escapeHtml(course.username)}</td>
-                <td>${Utils.escapeHtml(course.category)}</td>
-                <td>${Utils.escapeHtml(course.course)}</td>
-                <td>${course.completion}%</td>
-                <td>${Utils.formatDate(course.initiated)}</td>
-                <td>${Utils.formatDate(course.updated)}</td>
-                <td>${Utils.formatDate(course.concluded)}</td>
-                <td class="action-buttons">
-                    <button class="btn-icon" onclick="App.editCourse('${course.rowIndex}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-icon delete" onclick="App.deleteCourse('${course.rowIndex}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = data.map(course => {
+            // Check if current user can edit/delete this course
+            const canModify = STATE.currentUser.type === 'Admin' || course.createdBy === STATE.currentUser.username;
+            
+            return `
+                <tr>
+                    <td>${Utils.escapeHtml(course.username)}</td>
+                    <td>${Utils.escapeHtml(course.category)}</td>
+                    <td>${Utils.escapeHtml(course.course)}</td>
+                    <td>${course.completion}%</td>
+                    <td>${Utils.formatDate(course.initiated)}</td>
+                    <td>${Utils.formatDate(course.updated)}</td>
+                    <td>${Utils.formatDate(course.concluded)}</td>
+                    <td class="action-buttons">
+                        ${canModify ? `
+                            <button class="btn-icon" onclick="App.editCourse('${course.id}')" title="Edit course activity">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon delete" onclick="App.deleteCourse('${course.id}')" title="Delete course activity">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : '<span style="color: var(--text-secondary); font-size: 12px;">View only</span>'}
+                    </td>
+                </tr>
+            `;
+        }).join('');
     },
     
     showCourseModal(courseRow = null) {
@@ -1146,12 +1218,25 @@ const App = {
             usernameSelect.appendChild(option);
         });
         
+        // Setup course dropdown from library
+        const courseSelect = document.getElementById('course-name');
+        courseSelect.innerHTML = '<option value="">Select a course</option>';
+        
+        // Sort courses alphabetically
+        const sortedCourses = [...STATE.coursesList].sort((a, b) => a.name.localeCompare(b.name));
+        sortedCourses.forEach(course => {
+            const option = document.createElement('option');
+            option.value = course.name;
+            option.textContent = course.name;
+            courseSelect.appendChild(option);
+        });
+        
         if (courseRow) {
             // Edit mode
-            const course = STATE.masteryData.find(c => c.rowIndex === parseInt(courseRow));
+            const course = STATE.masteryData.find(c => c.id === courseRow);
             if (course) {
                 document.getElementById('course-modal-title').textContent = 'Edit Course';
-                document.getElementById('course-row-id').value = course.rowIndex;
+                document.getElementById('course-row-id').value = course.id;
                 document.getElementById('course-username').value = course.username;
                 document.getElementById('course-category').value = course.category;
                 document.getElementById('course-name').value = course.course;
@@ -1162,7 +1247,7 @@ const App = {
             }
         } else {
             // Add mode
-            document.getElementById('course-modal-title').textContent = 'Add Course';
+            document.getElementById('course-modal-title').textContent = 'Add Course Activity';
             document.getElementById('course-row-id').value = '';
             document.getElementById('course-form').reset();
             if (STATE.currentUser.type === 'User') {
@@ -1203,22 +1288,30 @@ const App = {
             completion,
             initiated,
             updated: updated || Utils.formatDate(new Date()),
-            concluded
+            concluded,
+            createdBy: STATE.currentUser.username,
+            createdAt: new Date().toISOString()
         };
         
         if (rowId) {
             // Update existing
-            const index = STATE.masteryData.findIndex(c => c.rowIndex === parseInt(rowId));
+            const index = STATE.masteryData.findIndex(c => c.id === rowId);
             if (index !== -1) {
-                STATE.masteryData[index] = { ...STATE.masteryData[index], ...courseData };
+                // Check permissions: Only owner or admin can edit
+                const existingRecord = STATE.masteryData[index];
+                if (existingRecord.createdBy !== STATE.currentUser.username && STATE.currentUser.type !== 'Admin') {
+                    alert('You can only edit your own course activities');
+                    return;
+                }
+                STATE.masteryData[index] = { ...existingRecord, ...courseData, id: rowId };
             }
         } else {
             // Add new
-            courseData.rowIndex = STATE.masteryData.length + 2;
+            courseData.id = 'mastery-' + Date.now();
             STATE.masteryData.push(courseData);
         }
         
-        // In production, would call Apps Script to update sheet
+        this.saveMasteryData();
         console.log('Course saved:', courseData);
         
         Utils.hide('course-modal');
@@ -1226,20 +1319,186 @@ const App = {
         this.updateScorecardData();
     },
     
-    editCourse(rowIndex) {
-        this.showCourseModal(rowIndex);
+    editCourse(courseId) {
+        this.showCourseModal(courseId);
     },
     
-    deleteCourse(rowIndex) {
-        if (!confirm('Are you sure you want to delete this course?')) return;
+    deleteCourse(courseId) {
+        const course = STATE.masteryData.find(c => c.id === courseId);
+        if (!course) return;
         
-        const index = STATE.masteryData.findIndex(c => c.rowIndex === parseInt(rowIndex));
+        // Check permissions: Only owner or admin can delete
+        if (course.createdBy !== STATE.currentUser.username && STATE.currentUser.type !== 'Admin') {
+            alert('You can only delete your own course activities');
+            return;
+        }
+        
+        if (!confirm('Are you sure you want to delete this course activity?')) return;
+        
+        const index = STATE.masteryData.findIndex(c => c.id === courseId);
         if (index !== -1) {
             STATE.masteryData.splice(index, 1);
-            // In production, would call Apps Script to delete from sheet
-            console.log('Course deleted:', rowIndex);
+            this.saveMasteryData();
+            console.log('Course deleted:', courseId);
             this.renderMasteryTable();
             this.updateScorecardData();
+        }
+    },
+
+    // Course Library Management
+    showCourseLibrary() {
+        Utils.show('course-library-modal');
+        this.renderCourseLibrary();
+        
+        // Default to first category
+        this.switchCourseCategory('compliance');
+    },
+
+    renderCourseLibrary() {
+        const categories = ['compliance', 'function', 'leadership', 'technology'];
+        
+        categories.forEach(category => {
+            const grid = document.getElementById(`${category}-courses`);
+            const courses = STATE.coursesList
+                .filter(c => c.category.toLowerCase() === category)
+                .sort((a, b) => a.name.localeCompare(b.name));
+            
+            if (courses.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary);">No courses in this category yet</p>';
+                return;
+            }
+            
+            grid.innerHTML = courses.map(course => `
+                <div class="course-card ${category}">
+                    <div class="course-card-name">
+                        ${course.url ? `<a href="${course.url}" target="_blank" title="Open course">${Utils.escapeHtml(course.name)}</a>` : Utils.escapeHtml(course.name)}
+                    </div>
+                    ${STATE.currentUser.type === 'Admin' ? `
+                        <div class="course-card-actions">
+                            <button class="btn-icon" onclick="App.editLibraryCourse('${course.id}')" title="Edit course">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon delete" onclick="App.deleteLibraryCourse('${course.id}')" title="Delete course">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        });
+    },
+
+    switchCourseCategory(category) {
+        // Update tab buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.category === category);
+        });
+        
+        // Show/hide category grids
+        const categories = ['compliance', 'function', 'leadership', 'technology'];
+        categories.forEach(cat => {
+            const grid = document.getElementById(`${cat}-courses`);
+            if (cat === category) {
+                grid.style.display = 'grid';
+            } else {
+                grid.style.display = 'none';
+            }
+        });
+    },
+
+    showLibraryCourseModal(courseId = null) {
+        if (STATE.currentUser.type !== 'Admin') {
+            alert('Only administrators can add or edit courses');
+            return;
+        }
+        
+        Utils.show('library-course-modal');
+        
+        if (courseId) {
+            // Edit mode
+            const course = STATE.coursesList.find(c => c.id === courseId);
+            if (course) {
+                document.getElementById('library-course-modal-title').textContent = 'Edit Course';
+                document.getElementById('library-course-id').value = course.id;
+                document.getElementById('library-course-name').value = course.name;
+                document.getElementById('library-course-category').value = course.category;
+                document.getElementById('library-course-url').value = course.url || '';
+            }
+        } else {
+            // Add mode
+            document.getElementById('library-course-modal-title').textContent = 'Add New Course';
+            document.getElementById('library-course-id').value = '';
+            document.getElementById('library-course-form').reset();
+        }
+    },
+
+    saveLibraryCourse() {
+        const courseId = document.getElementById('library-course-id').value;
+        const name = document.getElementById('library-course-name').value.trim();
+        const category = document.getElementById('library-course-category').value;
+        const url = document.getElementById('library-course-url').value.trim();
+        
+        if (!name || !category) {
+            alert('Please fill in all required fields');
+            return;
+        }
+        
+        const courseData = {
+            name,
+            category,
+            url: url || ''
+        };
+        
+        if (courseId) {
+            // Update existing
+            const index = STATE.coursesList.findIndex(c => c.id === courseId);
+            if (index !== -1) {
+                STATE.coursesList[index] = { ...STATE.coursesList[index], ...courseData };
+            }
+        } else {
+            // Add new
+            courseData.id = 'course-' + Date.now();
+            STATE.coursesList.push(courseData);
+        }
+        
+        this.saveCoursesLibrary();
+        console.log('Library course saved:', courseData);
+        
+        Utils.hide('library-course-modal');
+        this.renderCourseLibrary();
+    },
+
+    editLibraryCourse(courseId) {
+        this.showLibraryCourseModal(courseId);
+    },
+
+    deleteLibraryCourse(courseId) {
+        if (STATE.currentUser.type !== 'Admin') {
+            alert('Only administrators can delete courses');
+            return;
+        }
+        
+        const course = STATE.coursesList.find(c => c.id === courseId);
+        if (!course) return;
+        
+        // Check if course is being used in any mastery activities
+        const isUsed = STATE.masteryData.some(m => m.course === course.name);
+        if (isUsed) {
+            if (!confirm(`This course is currently assigned to users. Are you sure you want to delete "${course.name}"? This will not affect existing course activities.`)) {
+                return;
+            }
+        } else {
+            if (!confirm(`Are you sure you want to delete "${course.name}"?`)) {
+                return;
+            }
+        }
+        
+        const index = STATE.coursesList.findIndex(c => c.id === courseId);
+        if (index !== -1) {
+            STATE.coursesList.splice(index, 1);
+            this.saveCoursesLibrary();
+            console.log('Library course deleted:', courseId);
+            this.renderCourseLibrary();
         }
     },
     

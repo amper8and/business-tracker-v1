@@ -283,8 +283,11 @@ app.get('*', async (c) => {
                             <option value="Channel">Channel Business</option>
                         </select>
                     </div>
-                    <button id="add-course-btn" class="btn-primary">
-                        <i class="fas fa-plus"></i> Add Course
+                    <button id="add-course-activity-btn" class="btn-primary">
+                        <i class="fas fa-plus"></i> Add Course Activity
+                    </button>
+                    <button id="course-library-btn" class="btn-secondary">
+                        <i class="fas fa-book"></i> Course Library
                     </button>
                 </div>
                 
@@ -432,7 +435,10 @@ app.get('*', async (c) => {
                     </div>
                     <div class="form-group">
                         <label for="course-name">Course *</label>
-                        <input type="text" id="course-name" required>
+                        <select id="course-name" required>
+                            <option value="">Select a course</option>
+                        </select>
+                        <small class="form-help">Can't find your course? Visit <a href="#" id="open-course-library-link">Course Library</a> to add it.</small>
                     </div>
                     <div class="form-group">
                         <label for="course-completion">% Completion *</label>
@@ -629,6 +635,76 @@ app.get('*', async (c) => {
                     <i class="fas fa-trash"></i> Delete
                 </button>
                 <button id="save-user-btn" class="btn-primary">Save User</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Library Modal -->
+    <div id="course-library-modal" class="modal" style="display: none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>Course Library</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="course-library-header">
+                    <div class="course-library-tabs">
+                        <button class="tab-btn active" data-category="all">All Courses</button>
+                        <button class="tab-btn" data-category="Compliance">Compliance</button>
+                        <button class="tab-btn" data-category="Function">Function</button>
+                        <button class="tab-btn" data-category="Leadership">Leadership</button>
+                        <button class="tab-btn" data-category="Technology">Technology</button>
+                    </div>
+                    <button id="add-library-course-btn" class="btn-primary" style="display: none;">
+                        <i class="fas fa-plus"></i> Add Course
+                    </button>
+                </div>
+                <div class="course-library-grid" id="course-library-grid">
+                    <p>Loading courses...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-cancel">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Library Course Modal -->
+    <div id="edit-library-course-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="edit-library-course-title">Add Course to Library</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-library-course-form">
+                    <input type="hidden" id="edit-library-course-id">
+                    <div class="form-group">
+                        <label for="edit-library-course-name">Course Name *</label>
+                        <input type="text" id="edit-library-course-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-library-course-category">Category *</label>
+                        <select id="edit-library-course-category" required>
+                            <option value="">Select Category</option>
+                            <option value="Compliance">Compliance</option>
+                            <option value="Function">Function</option>
+                            <option value="Leadership">Leadership</option>
+                            <option value="Technology">Technology</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-library-course-url">Course URL</label>
+                        <input type="url" id="edit-library-course-url" placeholder="https://...">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-cancel">Cancel</button>
+                <button id="delete-library-course-btn" class="btn-danger" style="display: none;">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                <button id="save-library-course-btn" class="btn-primary">Save Course</button>
             </div>
         </div>
     </div>
