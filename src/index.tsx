@@ -649,17 +649,25 @@ app.get('*', async (c) => {
             <div class="modal-body">
                 <div class="course-library-header">
                     <div class="course-library-tabs">
-                        <button class="tab-btn active" data-category="all">All Courses</button>
-                        <button class="tab-btn" data-category="Compliance">Compliance</button>
-                        <button class="tab-btn" data-category="Function">Function</button>
-                        <button class="tab-btn" data-category="Leadership">Leadership</button>
-                        <button class="tab-btn" data-category="Technology">Technology</button>
+                        <button class="tab-btn active" data-category="compliance" onclick="App.switchCourseCategory('compliance')">Compliance</button>
+                        <button class="tab-btn" data-category="function" onclick="App.switchCourseCategory('function')">Function</button>
+                        <button class="tab-btn" data-category="leadership" onclick="App.switchCourseCategory('leadership')">Leadership</button>
+                        <button class="tab-btn" data-category="technology" onclick="App.switchCourseCategory('technology')">Technology</button>
                     </div>
-                    <button id="add-library-course-btn" class="btn-primary" style="display: none;">
+                    <button id="add-library-course-btn" class="btn-primary">
                         <i class="fas fa-plus"></i> Add Course
                     </button>
                 </div>
-                <div class="course-library-grid" id="course-library-grid">
+                <div class="course-library-grid" id="compliance-courses">
+                    <p>Loading courses...</p>
+                </div>
+                <div class="course-library-grid" id="function-courses" style="display: none;">
+                    <p>Loading courses...</p>
+                </div>
+                <div class="course-library-grid" id="leadership-courses" style="display: none;">
+                    <p>Loading courses...</p>
+                </div>
+                <div class="course-library-grid" id="technology-courses" style="display: none;">
                     <p>Loading courses...</p>
                 </div>
             </div>
@@ -669,23 +677,23 @@ app.get('*', async (c) => {
         </div>
     </div>
 
-    <!-- Edit Library Course Modal -->
-    <div id="edit-library-course-modal" class="modal" style="display: none;">
+    <!-- Library Course Modal (Add/Edit) -->
+    <div id="library-course-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="edit-library-course-title">Add Course to Library</h3>
+                <h3 id="library-course-modal-title">Add Course to Library</h3>
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="edit-library-course-form">
-                    <input type="hidden" id="edit-library-course-id">
+                <form id="library-course-form">
+                    <input type="hidden" id="library-course-id">
                     <div class="form-group">
-                        <label for="edit-library-course-name">Course Name *</label>
-                        <input type="text" id="edit-library-course-name" required>
+                        <label for="library-course-name">Course Name *</label>
+                        <input type="text" id="library-course-name" required>
                     </div>
                     <div class="form-group">
-                        <label for="edit-library-course-category">Category *</label>
-                        <select id="edit-library-course-category" required>
+                        <label for="library-course-category">Category *</label>
+                        <select id="library-course-category" required>
                             <option value="">Select Category</option>
                             <option value="Compliance">Compliance</option>
                             <option value="Function">Function</option>
@@ -694,16 +702,13 @@ app.get('*', async (c) => {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="edit-library-course-url">Course URL</label>
-                        <input type="url" id="edit-library-course-url" placeholder="https://...">
+                        <label for="library-course-url">Course URL</label>
+                        <input type="url" id="library-course-url" placeholder="https://...">
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary modal-cancel">Cancel</button>
-                <button id="delete-library-course-btn" class="btn-danger" style="display: none;">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
                 <button id="save-library-course-btn" class="btn-primary">Save Course</button>
             </div>
         </div>

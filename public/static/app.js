@@ -612,13 +612,11 @@ const App = {
         // Add buttons
         document.getElementById('add-course-activity-btn').addEventListener('click', () => this.showCourseModal());
         document.getElementById('course-library-btn').addEventListener('click', () => this.showCourseLibrary());
-        document.getElementById('course-library-btn').addEventListener('click', () => this.showCourseLibrary());
         document.getElementById('add-card-btn').addEventListener('click', () => this.showCardModal());
         
         // Course library buttons
-        document.getElementById('add-library-course-btn').addEventListener('click', () => this.showEditLibraryCourseModal());
+        document.getElementById('add-library-course-btn').addEventListener('click', () => this.showLibraryCourseModal());
         document.getElementById('save-library-course-btn').addEventListener('click', () => this.saveLibraryCourse());
-        document.getElementById('delete-library-course-btn').addEventListener('click', () => {
             const courseId = document.getElementById('edit-library-course-id').value;
             this.deleteLibraryCourse(courseId);
         });
@@ -1352,6 +1350,15 @@ const App = {
     // Course Library Management
     showCourseLibrary() {
         Utils.show('course-library-modal');
+        
+        // Show/hide Add button based on admin status
+        const addBtn = document.getElementById('add-library-course-btn');
+        if (STATE.currentUser.type === 'Admin') {
+            addBtn.style.display = 'block';
+        } else {
+            addBtn.style.display = 'none';
+        }
+        
         this.renderCourseLibrary();
         
         // Default to first category
