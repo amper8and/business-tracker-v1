@@ -1637,6 +1637,7 @@ const App = {
     
     // Performance View
     showPerformance() {
+        console.log('showPerformance() called');
         STATE.currentLevel = 2;
         STATE.currentView = 'performance';
         
@@ -1645,7 +1646,11 @@ const App = {
         Utils.hide('level-2-kanban');
         Utils.show('level-2-performance');
         
-        document.getElementById('breadcrumb-content').textContent = 'Business Review Scorecard > Performance Dashboard';
+        // Update breadcrumb if element exists
+        const breadcrumb = document.getElementById('breadcrumb-content');
+        if (breadcrumb) {
+            breadcrumb.textContent = 'Business Review Scorecard > Performance Dashboard';
+        }
         
         // Load performance dashboard
         this.loadPerformanceDashboard();
@@ -1659,75 +1664,117 @@ const App = {
             return;
         }
         
+        // Generate sample performance data
+        this.generatePerformanceData();
+        
         container.innerHTML = `
             <div class="performance-dashboard">
+                <!-- Filter Bar -->
+                <div class="perf-filter-bar" style="background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+                    <div class="filter-group" style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Category</label>
+                        <select id="perf-category-filter" class="filter-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; background: white; cursor: pointer;">
+                            <option value="All">All Categories</option>
+                            <option value="Content Business">Content Business</option>
+                            <option value="Channel Business">Channel Business</option>
+                        </select>
+                    </div>
+                    <div class="filter-group" style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Service</label>
+                        <select id="perf-service-filter" class="filter-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; background: white; cursor: pointer;">
+                            <option value="All">All Services</option>
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="filter-group" style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Month</label>
+                        <select id="perf-month-filter" class="filter-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; background: white; cursor: pointer;">
+                            <option value="2025-01">January 2025</option>
+                            <option value="2024-12">December 2024</option>
+                            <option value="2024-11">November 2024</option>
+                        </select>
+                    </div>
+                    <div class="filter-group" style="flex: 0; min-width: auto;">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">&nbsp;</label>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0;">
+                            <input type="checkbox" id="toggle-target-to-date" style="width: 16px; height: 16px; cursor: pointer;">
+                            <label for="toggle-target-to-date" style="font-size: 0.875rem; color: #374151; cursor: pointer; margin: 0;">Show Target to Date</label>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- KPI Cards -->
                 <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
                     <div class="kpi-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">MTD Revenue</div>
-                        <div style="font-size: 2rem; font-weight: bold; color: var(--primary);">R 2.1M</div>
-                        <div style="color: var(--success); font-size: 0.875rem; margin-top: 0.5rem;">
-                            <i class="fas fa-arrow-up"></i> 12% vs Target
+                        <div style="color: #6b7280; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.5rem;">MTD REVENUE</div>
+                        <div id="kpi-mtd-revenue" style="font-size: 1.75rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">R 2.1M</div>
+                        <div id="kpi-mtd-variance" style="font-size: 0.875rem;">
+                            <i class="fas fa-arrow-up"></i> <span style="font-weight: 600;">R 100K</span> vs Target
                         </div>
                     </div>
                     <div class="kpi-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">Run Rate</div>
-                        <div style="font-size: 2rem; font-weight: bold; color: var(--primary);">R 85K/day</div>
-                        <div style="color: var(--warning); font-size: 0.875rem; margin-top: 0.5rem;">
-                            <i class="fas fa-minus"></i> Required: R 90K/day
+                        <div style="color: #6b7280; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.5rem;">ACTUAL RUN RATE</div>
+                        <div id="kpi-actual-runrate" style="font-size: 1.75rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">R 85K/day</div>
+                        <div id="kpi-runrate-status" style="font-size: 0.875rem;">
+                            <span style="font-weight: 600;">Required: R 90K/day</span>
                         </div>
                     </div>
                     <div class="kpi-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">Subscriber Base</div>
-                        <div style="font-size: 2rem; font-weight: bold; color: var(--primary);">154K</div>
-                        <div style="color: var(--success); font-size: 0.875rem; margin-top: 0.5rem;">
-                            <i class="fas fa-arrow-up"></i> +2.3K this month
+                        <div style="color: #6b7280; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.5rem;">SUBSCRIBER BASE</div>
+                        <div id="kpi-subscriber-base" style="font-size: 1.75rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">154K</div>
+                        <div id="kpi-subscriber-growth" style="font-size: 0.875rem;">
+                            <i class="fas fa-arrow-up"></i> <span style="font-weight: 600;">+2.3K</span> this month
                         </div>
                     </div>
                     <div class="kpi-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">Revenue Today</div>
-                        <div style="font-size: 2rem; font-weight: bold; color: var(--primary);">R 89K</div>
-                        <div style="color: var(--success); font-size: 0.875rem; margin-top: 0.5rem;">
-                            <i class="fas fa-check"></i> On track
+                        <div style="color: #6b7280; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.5rem;">REVENUE TODAY</div>
+                        <div id="kpi-revenue-today" style="font-size: 1.75rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">R 89K</div>
+                        <div id="kpi-today-status" style="font-size: 0.875rem; color: #10b981;">
+                            <i class="fas fa-check-circle"></i> <span style="font-weight: 600;">On Track</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Charts Grid -->
-                <div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-                    <div class="chart-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <h3 style="margin-bottom: 1rem; color: var(--text-primary);">MTD Revenue vs Target</h3>
-                        <canvas id="revenue-chart"></canvas>
+                <!-- Charts Section -->
+                <div class="charts-section" style="margin-bottom: 2rem;">
+                    <div style="background: white; padding: 1rem 1.5rem; border-radius: 8px 8px 0 0; border-bottom: 1px solid #e5e7eb;">
+                        <h2 style="font-size: 1.25rem; font-weight: 700; color: #111827; margin: 0;">Performance Trends</h2>
                     </div>
-                    <div class="chart-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Run Rate Trend</h3>
-                        <canvas id="runrate-chart"></canvas>
+                    <div class="charts-grid" style="background: white; padding: 1.5rem; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+                        <div class="chart-container">
+                            <h3 style="font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 1rem;">MTD Revenue vs Target</h3>
+                            <canvas id="revenue-chart" style="max-height: 300px;"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3 style="font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 1rem;">Daily Run Rate</h3>
+                            <canvas id="runrate-chart" style="max-height: 300px;"></canvas>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Subscriber Chart -->
-                <div class="chart-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 2rem;">
-                    <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Subscriber Growth</h3>
-                    <canvas id="subscriber-chart"></canvas>
-                </div>
-
-                <!-- Daily Breakdown Table -->
-                <div class="table-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Daily Revenue Breakdown (Last 7 Days)</h3>
+                <!-- Detail Table -->
+                <div class="detail-section" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h2 style="font-size: 1.25rem; font-weight: 700; color: #111827; margin: 0;">Detailed Breakdown</h2>
+                        <button id="export-perf-csv" class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                            <i class="fas fa-download"></i> Export CSV
+                        </button>
+                    </div>
                     <div style="overflow-x: auto;">
-                        <table class="data-table">
+                        <table class="data-table" id="performance-detail-table">
                             <thead>
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Revenue</th>
-                                    <th>Target</th>
-                                    <th>New Subs</th>
-                                    <th>Churn</th>
-                                    <th>Net Adds</th>
-                                    <th>Status</th>
+                                    <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Service</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">MTD Revenue</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">MTD Target</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Variance</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">% to Target</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Actual Run Rate</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Required Run Rate</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Subscriber Base</th>
                                 </tr>
                             </thead>
-                            <tbody id="daily-breakdown-tbody">
+                            <tbody id="performance-detail-tbody">
                                 <!-- Will be populated by JS -->
                             </tbody>
                         </table>
@@ -1736,70 +1783,218 @@ const App = {
             </div>
         `;
         
-        // Initialize charts after a brief delay to ensure DOM is ready
-        setTimeout(() => this.initializePerformanceCharts(), 100);
+        // Setup filter event listeners
+        this.setupPerformanceFilters();
+        
+        // Initialize charts and table
+        setTimeout(() => this.renderPerformanceDashboard(), 100);
     },
     
-    initializePerformanceCharts() {
-        console.log('Initializing performance charts...');
+    generatePerformanceData() {
+        // Generate sample performance data based on the GitHub repo structure
+        STATE.performanceData = {
+            services: [
+                {
+                    name: 'YoGamezPro',
+                    category: 'Content Business',
+                    mtdRevenue: 1250000,
+                    mtdTarget: 1200000,
+                    actualRunRate: 48076,
+                    requiredRunRate: 50000,
+                    subscriberBase: 85000,
+                    dailyData: this.generateDailyData(1250000, 1200000, 26)
+                },
+                {
+                    name: 'MobiStream',
+                    category: 'Content Business',
+                    mtdRevenue: 850000,
+                    mtdTarget: 800000,
+                    actualRunRate: 32692,
+                    requiredRunRate: 35000,
+                    subscriberBase: 69000,
+                    dailyData: this.generateDailyData(850000, 800000, 26)
+                }
+            ],
+            filters: {
+                category: 'All',
+                service: 'All',
+                month: '2025-01'
+            }
+        };
+    },
+    
+    generateDailyData(mtdRevenue, mtdTarget, days) {
+        const dailyData = [];
+        const avgDaily = mtdRevenue / days;
+        const variance = avgDaily * 0.15;
+        
+        for (let i = 1; i <= days; i++) {
+            const dailyRev = avgDaily + (Math.random() - 0.5) * variance;
+            dailyData.push({
+                day: i,
+                date: `2025-01-${String(i).padStart(2, '0')}`,
+                revenue: Math.round(dailyRev),
+                target: Math.round(mtdTarget / days)
+            });
+        }
+        return dailyData;
+    },
+    
+    setupPerformanceFilters() {
+        // Populate service filter
+        const serviceFilter = document.getElementById('perf-service-filter');
+        if (serviceFilter && STATE.performanceData) {
+            const services = STATE.performanceData.services;
+            serviceFilter.innerHTML = '<option value="All">All Services</option>';
+            services.forEach(service => {
+                const option = document.createElement('option');
+                option.value = service.name;
+                option.textContent = service.name;
+                serviceFilter.appendChild(option);
+            });
+        }
+        
+        // Attach filter change listeners
+        document.getElementById('perf-category-filter')?.addEventListener('change', () => this.renderPerformanceDashboard());
+        document.getElementById('perf-service-filter')?.addEventListener('change', () => this.renderPerformanceDashboard());
+        document.getElementById('perf-month-filter')?.addEventListener('change', () => this.renderPerformanceDashboard());
+        document.getElementById('toggle-target-to-date')?.addEventListener('change', () => this.renderPerformanceDashboard());
+        document.getElementById('export-perf-csv')?.addEventListener('click', () => this.exportPerformanceData());
+    },
+    
+    renderPerformanceDashboard() {
+        console.log('renderPerformanceDashboard() called');
+        
+        if (!STATE.performanceData) {
+            console.error('No performance data available');
+            return;
+        }
+        
+        // Get filter values
+        const categoryFilter = document.getElementById('perf-category-filter')?.value || 'All';
+        const serviceFilter = document.getElementById('perf-service-filter')?.value || 'All';
+        const showTargetToDate = document.getElementById('toggle-target-to-date')?.checked || false;
+        
+        // Filter services
+        let filteredServices = STATE.performanceData.services;
+        if (categoryFilter !== 'All') {
+            filteredServices = filteredServices.filter(s => s.category === categoryFilter);
+        }
+        if (serviceFilter !== 'All') {
+            filteredServices = filteredServices.filter(s => s.name === serviceFilter);
+        }
+        
+        // Calculate aggregated metrics
+        const totalMtdRevenue = filteredServices.reduce((sum, s) => sum + s.mtdRevenue, 0);
+        const totalMtdTarget = filteredServices.reduce((sum, s) => sum + s.mtdTarget, 0);
+        const totalActualRunRate = filteredServices.reduce((sum, s) => sum + s.actualRunRate, 0);
+        const totalRequiredRunRate = filteredServices.reduce((sum, s) => sum + s.requiredRunRate, 0);
+        const totalSubscriberBase = filteredServices.reduce((sum, s) => sum + s.subscriberBase, 0);
+        
+        const variance = totalMtdRevenue - totalMtdTarget;
+        const variancePercent = ((variance / totalMtdTarget) * 100).toFixed(1);
+        
+        // Update KPIs
+        document.getElementById('kpi-mtd-revenue').textContent = `R ${(totalMtdRevenue / 1000000).toFixed(1)}M`;
+        document.getElementById('kpi-mtd-variance').innerHTML = `
+            <i class="fas fa-arrow-${variance >= 0 ? 'up' : 'down'}"></i> 
+            <span style="font-weight: 600;">R ${Math.abs(variance / 1000).toFixed(0)}K</span> 
+            (${variancePercent}%) vs Target
+        `;
+        document.getElementById('kpi-mtd-variance').style.color = variance >= 0 ? '#10b981' : '#ef4444';
+        
+        document.getElementById('kpi-actual-runrate').textContent = `R ${(totalActualRunRate / 1000).toFixed(0)}K/day`;
+        document.getElementById('kpi-runrate-status').innerHTML = `
+            <span style="font-weight: 600;">Required: R ${(totalRequiredRunRate / 1000).toFixed(0)}K/day</span>
+        `;
+        
+        document.getElementById('kpi-subscriber-base').textContent = `${(totalSubscriberBase / 1000).toFixed(0)}K`;
+        
+        // Get today's revenue (last day in data)
+        const todayRevenue = filteredServices[0]?.dailyData[filteredServices[0].dailyData.length - 1]?.revenue || 0;
+        document.getElementById('kpi-revenue-today').textContent = `R ${(todayRevenue / 1000).toFixed(0)}K`;
+        
+        // Render charts
+        this.renderPerformanceCharts(filteredServices, showTargetToDate);
+        
+        // Render detail table
+        this.renderPerformanceTable(filteredServices);
+    },
+    
+    renderPerformanceCharts(services, showTargetToDate) {
+        console.log('Rendering performance charts with', services.length, 'services');
         
         // Check if Chart.js is loaded
         if (typeof Chart === 'undefined') {
-            console.error('Chart.js is not loaded. Loading from CDN...');
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
-            script.onload = () => {
-                console.log('Chart.js loaded, retrying chart initialization...');
-                this.renderPerformanceCharts();
-            };
-            document.head.appendChild(script);
-        } else {
-            this.renderPerformanceCharts();
+            console.error('Chart.js is not loaded');
+            return;
         }
-    },
-    
-    renderPerformanceCharts() {
-        console.log('Rendering performance charts...');
         
-        // Revenue Chart
+        // Destroy existing charts
+        if (window.revenueChart) window.revenueChart.destroy();
+        if (window.runrateChart) window.runrateChart.destroy();
+        
+        // Aggregate daily data across services
+        const aggregatedDaily = {};
+        services.forEach(service => {
+            service.dailyData.forEach(day => {
+                if (!aggregatedDaily[day.date]) {
+                    aggregatedDaily[day.date] = { revenue: 0, target: 0 };
+                }
+                aggregatedDaily[day.date].revenue += day.revenue;
+                aggregatedDaily[day.date].target += day.target;
+            });
+        });
+        
+        const sortedDates = Object.keys(aggregatedDaily).sort();
+        const dailyRevenues = sortedDates.map(date => aggregatedDaily[date].revenue);
+        const dailyTargets = sortedDates.map(date => aggregatedDaily[date].target);
+        
+        // Calculate cumulative for MTD chart
+        let cumulativeRevenue = 0;
+        let cumulativeTarget = 0;
+        const cumulativeRevenues = dailyRevenues.map(rev => { cumulativeRevenue += rev; return cumulativeRevenue; });
+        const cumulativeTargets = dailyTargets.map(tgt => { cumulativeTarget += tgt; return cumulativeTarget; });
+        
+        // Revenue Chart (MTD Cumulative)
         const revenueCtx = document.getElementById('revenue-chart');
         if (revenueCtx) {
-            new Chart(revenueCtx, {
-                type: 'bar',
+            window.revenueChart = new Chart(revenueCtx, {
+                type: 'line',
                 data: {
-                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'MTD'],
+                    labels: sortedDates.map(d => d.substring(8)),
                     datasets: [{
-                        label: 'Actual Revenue (R)',
-                        data: [520000, 545000, 528000, 507000, 2100000],
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
+                        label: 'Actual MTD Revenue',
+                        data: cumulativeRevenues,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 2
                     }, {
-                        label: 'Target Revenue (R)',
-                        data: [500000, 500000, 500000, 500000, 2000000],
-                        backgroundColor: 'rgba(255, 159, 64, 0.6)',
-                        borderColor: 'rgba(255, 159, 64, 1)',
-                        borderWidth: 1
+                        label: showTargetToDate ? 'Target to Date' : 'Full Month Target',
+                        data: showTargetToDate ? cumulativeTargets : Array(sortedDates.length).fill(cumulativeTargets[cumulativeTargets.length - 1]),
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderDash: [5, 5],
+                        tension: 0,
+                        fill: false,
+                        borderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: true,
+                    maintainAspectRatio: false,
                     scales: {
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                callback: function(value) {
-                                    return 'R ' + (value / 1000) + 'K';
-                                }
+                                callback: value => `R ${(value / 1000000).toFixed(1)}M`
                             }
                         }
                     },
                     plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        }
+                        legend: { display: true, position: 'top' }
                     }
                 }
             });
@@ -1808,151 +2003,77 @@ const App = {
         // Run Rate Chart
         const runrateCtx = document.getElementById('runrate-chart');
         if (runrateCtx) {
-            new Chart(runrateCtx, {
+            window.runrateChart = new Chart(runrateCtx, {
                 type: 'line',
                 data: {
-                    labels: ['Day 1', 'Day 5', 'Day 10', 'Day 15', 'Day 20', 'Day 25', 'Today'],
+                    labels: sortedDates.map(d => d.substring(8)),
                     datasets: [{
-                        label: 'Actual Run Rate (R/day)',
-                        data: [82000, 83500, 85000, 84000, 86000, 85500, 85000],
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        label: 'Daily Revenue',
+                        data: dailyRevenues,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         tension: 0.4,
-                        fill: true
+                        fill: true,
+                        borderWidth: 2
                     }, {
-                        label: 'Required Run Rate (R/day)',
-                        data: [90000, 90000, 90000, 90000, 90000, 90000, 90000],
-                        borderColor: 'rgba(255, 99, 132, 1)',
+                        label: 'Daily Target',
+                        data: dailyTargets,
+                        borderColor: '#ef4444',
                         borderDash: [5, 5],
-                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
                         tension: 0,
-                        fill: false
+                        fill: false,
+                        borderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: true,
+                    maintainAspectRatio: false,
                     scales: {
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                callback: function(value) {
-                                    return 'R ' + (value / 1000) + 'K';
-                                }
+                                callback: value => `R ${(value / 1000).toFixed(0)}K`
                             }
                         }
                     },
                     plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        }
+                        legend: { display: true, position: 'top' }
                     }
                 }
             });
         }
+    },
+    
+    renderPerformanceTable(services) {
+        const tbody = document.getElementById('performance-detail-tbody');
+        if (!tbody) return;
         
-        // Subscriber Chart
-        const subscriberCtx = document.getElementById('subscriber-chart');
-        if (subscriberCtx) {
-            new Chart(subscriberCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                    datasets: [{
-                        label: 'Total Subscribers',
-                        data: [151700, 152400, 153200, 154000],
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        tension: 0.4,
-                        yAxisID: 'y',
-                        fill: true
-                    }, {
-                        label: 'Net Adds',
-                        data: [700, 700, 800, 800],
-                        borderColor: 'rgba(153, 102, 255, 1)',
-                        backgroundColor: 'rgba(153, 102, 255, 0.6)',
-                        type: 'bar',
-                        yAxisID: 'y1'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Total Subscribers'
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return (value / 1000) + 'K';
-                                }
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Net Adds'
-                            },
-                            grid: {
-                                drawOnChartArea: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        }
-                    }
-                }
-            });
-        }
-        
-        // Populate daily breakdown table
-        const tbody = document.getElementById('daily-breakdown-tbody');
-        if (tbody) {
-            const dailyData = [
-                { date: '2025-01-17', revenue: 89000, target: 90000, newSubs: 145, churn: 32, netAdds: 113, status: 'on-track' },
-                { date: '2025-01-16', revenue: 91000, target: 90000, newSubs: 158, churn: 28, netAdds: 130, status: 'above' },
-                { date: '2025-01-15', revenue: 87000, target: 90000, newSubs: 142, churn: 35, netAdds: 107, status: 'below' },
-                { date: '2025-01-14', revenue: 88500, target: 90000, newSubs: 151, churn: 30, netAdds: 121, status: 'on-track' },
-                { date: '2025-01-13', revenue: 92000, target: 90000, newSubs: 165, churn: 25, netAdds: 140, status: 'above' },
-                { date: '2025-01-12', revenue: 85000, target: 90000, newSubs: 138, churn: 40, netAdds: 98, status: 'below' },
-                { date: '2025-01-11', revenue: 90000, target: 90000, newSubs: 155, churn: 29, netAdds: 126, status: 'on-track' }
-            ];
+        tbody.innerHTML = services.map(service => {
+            const variance = service.mtdRevenue - service.mtdTarget;
+            const variancePercent = ((variance / service.mtdTarget) * 100).toFixed(1);
+            const varianceColor = variance >= 0 ? '#10b981' : '#ef4444';
+            const varianceIcon = variance >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
             
-            tbody.innerHTML = dailyData.map(day => {
-                const statusIcon = day.status === 'above' ? '<i class="fas fa-check-circle" style="color: var(--success);"></i>' :
-                                  day.status === 'below' ? '<i class="fas fa-exclamation-triangle" style="color: var(--error);"></i>' :
-                                  '<i class="fas fa-minus-circle" style="color: var(--warning);"></i>';
-                const statusText = day.status === 'above' ? 'Above Target' :
-                                  day.status === 'below' ? 'Below Target' :
-                                  'On Track';
-                
-                return `
-                    <tr>
-                        <td>${day.date}</td>
-                        <td>R ${(day.revenue / 1000).toFixed(0)}K</td>
-                        <td>R ${(day.target / 1000).toFixed(0)}K</td>
-                        <td>${day.newSubs}</td>
-                        <td>${day.churn}</td>
-                        <td><strong>${day.netAdds}</strong></td>
-                        <td>${statusIcon} ${statusText}</td>
-                    </tr>
-                `;
-            }).join('');
-        }
-        
-        console.log('Performance charts rendered successfully');
+            return `
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 0.75rem; font-weight: 500;">${service.name}</td>
+                    <td style="padding: 0.75rem; text-align: right; font-weight: 600;">R ${(service.mtdRevenue / 1000000).toFixed(2)}M</td>
+                    <td style="padding: 0.75rem; text-align: right;">R ${(service.mtdTarget / 1000000).toFixed(2)}M</td>
+                    <td style="padding: 0.75rem; text-align: right; color: ${varianceColor}; font-weight: 600;">
+                        <i class="fas ${varianceIcon}"></i> R ${Math.abs(variance / 1000).toFixed(0)}K
+                    </td>
+                    <td style="padding: 0.75rem; text-align: right; color: ${varianceColor}; font-weight: 600;">${variancePercent}%</td>
+                    <td style="padding: 0.75rem; text-align: right;">R ${(service.actualRunRate / 1000).toFixed(0)}K</td>
+                    <td style="padding: 0.75rem; text-align: right;">R ${(service.requiredRunRate / 1000).toFixed(0)}K</td>
+                    <td style="padding: 0.75rem; text-align: right;">${(service.subscriberBase / 1000).toFixed(1)}K</td>
+                </tr>
+            `;
+        }).join('');
+    },
+    
+    exportPerformanceData() {
+        // Simple CSV export
+        alert('CSV export functionality would download filtered performance data here');
     },
     
     // Kanban View
