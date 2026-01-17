@@ -1096,26 +1096,40 @@ const App = {
     },
     
     setupMasteryFilters() {
-        console.log('Setting up mastery filters. STATE.users:', STATE.users.length, 'users');
+        console.log('=== setupMasteryFilters START ===');
+        console.log('STATE.users length:', STATE.users.length);
+        console.log('STATE.users:', STATE.users.map(u => ({ username: u.username, name: u.name })));
         
         // Username filter - Show ALL users for filtering purposes
         const usernameFilter = document.getElementById('mastery-filter-username');
+        console.log('usernameFilter element:', usernameFilter);
+        
         if (!usernameFilter) {
-            console.error('mastery-filter-username element not found');
+            console.error('ERROR: mastery-filter-username element not found in DOM');
             return;
         }
         
-        usernameFilter.innerHTML = '<option value="">All Users</option>';
+        // Clear and populate
+        usernameFilter.innerHTML = '';
         
-        // Show all users in dropdown (filtering is just for display, not access control)
-        STATE.users.forEach(user => {
+        // Add "All Users" option
+        const allOption = document.createElement('option');
+        allOption.value = '';
+        allOption.textContent = 'All Users';
+        usernameFilter.appendChild(allOption);
+        console.log('Added "All Users" option');
+        
+        // Add each user
+        STATE.users.forEach((user, index) => {
             const option = document.createElement('option');
             option.value = user.username;
             option.textContent = user.name || user.username;
             usernameFilter.appendChild(option);
+            console.log(`Added user ${index + 1}:`, { value: user.username, text: user.name || user.username });
         });
         
-        console.log('Username filter populated with', STATE.users.length, 'users');
+        console.log('Final dropdown option count:', usernameFilter.options.length);
+        console.log('=== setupMasteryFilters END ===');
     },
     
     filterMasteryTable() {
@@ -1173,29 +1187,40 @@ const App = {
     },
     
     showCourseModal(courseRow = null) {
+        console.log('=== showCourseModal START ===');
+        console.log('STATE.users length:', STATE.users.length);
+        console.log('STATE.coursesList length:', STATE.coursesList.length);
+        
         Utils.show('course-modal');
         
         // Setup username dropdown - Show ALL users
         const usernameSelect = document.getElementById('course-username');
+        console.log('usernameSelect element:', usernameSelect);
+        
         if (!usernameSelect) {
-            console.error('course-username element not found');
+            console.error('ERROR: course-username element not found');
             return;
         }
         
         usernameSelect.innerHTML = '';
         
         // Show all users in dropdown (filtering is just for display, not access control)
-        STATE.users.forEach(user => {
+        STATE.users.forEach((user, index) => {
             const option = document.createElement('option');
             option.value = user.username;
             option.textContent = user.name || user.username;
             usernameSelect.appendChild(option);
+            console.log(`Added username ${index + 1}:`, { value: user.username, text: user.name || user.username });
         });
+        
+        console.log('Username dropdown option count:', usernameSelect.options.length);
         
         // Setup course dropdown from library
         const courseSelect = document.getElementById('course-name');
+        console.log('courseSelect element:', courseSelect);
+        
         if (!courseSelect) {
-            console.error('course-name element not found');
+            console.error('ERROR: course-name element not found');
             return;
         }
         
@@ -1203,11 +1228,18 @@ const App = {
         
         // Sort courses alphabetically
         const sortedCourses = [...STATE.coursesList].sort((a, b) => a.name.localeCompare(b.name));
-        sortedCourses.forEach(course => {
+        sortedCourses.forEach((course, index) => {
             const option = document.createElement('option');
             option.value = course.name;
             option.textContent = course.name;
             courseSelect.appendChild(option);
+            if (index < 3) {
+                console.log(`Added course ${index + 1}:`, course.name);
+            }
+        });
+        
+        console.log('Course dropdown option count:', courseSelect.options.length);
+        console.log('=== showCourseModal username/course setup END ===');
         });
         
         if (courseRow) {
@@ -1569,26 +1601,33 @@ const App = {
     },
     
     setupKanbanFilters() {
-        console.log('Setting up kanban filters. Total users:', STATE.users.length);
+        console.log('=== setupKanbanFilters START ===');
+        console.log('STATE.users length:', STATE.users.length);
+        console.log('STATE.users:', STATE.users.map(u => ({ username: u.username, name: u.name })));
         
         // Owner filter - Show ALL users for filtering purposes
         const ownerFilter = document.getElementById('kanban-filter-owner');
+        console.log('ownerFilter element:', ownerFilter);
+        
         if (!ownerFilter) {
-            console.error('kanban-filter-owner element not found');
+            console.error('ERROR: kanban-filter-owner element not found in DOM');
             return;
         }
         
+        // Clear and populate
         ownerFilter.innerHTML = '';
         
-        // Show all users in dropdown (filtering is just for display, not access control)
-        STATE.users.forEach(user => {
+        // Add each user
+        STATE.users.forEach((user, index) => {
             const option = document.createElement('option');
             option.value = user.username;
             option.textContent = user.name || user.username;
             ownerFilter.appendChild(option);
+            console.log(`Added owner ${index + 1}:`, { value: user.username, text: user.name || user.username });
         });
         
-        console.log('Owner filter populated with', STATE.users.length, 'users');
+        console.log('Final owner filter option count:', ownerFilter.options.length);
+        console.log('=== setupKanbanFilters END ===');
     },
     
     renderKanban() {
