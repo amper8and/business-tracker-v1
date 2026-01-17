@@ -705,6 +705,11 @@ app.get('*', async (c) => {
                         <label for="library-course-url">Course URL</label>
                         <input type="url" id="library-course-url" placeholder="https://...">
                     </div>
+                    <div class="form-group">
+                        <label for="library-course-hours">Total Hours *</label>
+                        <input type="number" id="library-course-hours" min="0.5" step="0.5" value="4" required>
+                        <small style="color: var(--text-secondary); font-size: 12px;">Duration of the course in hours (default: 4)</small>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">

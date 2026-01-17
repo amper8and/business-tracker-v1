@@ -427,30 +427,45 @@ const App = {
         if (stored) {
             STATE.coursesList = JSON.parse(stored);
             console.log('Loaded courses library from localStorage:', STATE.coursesList.length, 'courses');
+            
+            // Migration: Add hours field to existing courses that don't have it
+            let migrated = false;
+            STATE.coursesList = STATE.coursesList.map(course => {
+                if (!course.hours) {
+                    migrated = true;
+                    return { ...course, hours: 4 }; // Default 4 hours
+                }
+                return course;
+            });
+            
+            if (migrated) {
+                console.log('Migrated courses to include hours field (default: 4 hours)');
+                this.saveCoursesLibrary();
+            }
         } else {
             // Initialize with courses from Excel file
             console.log('Initializing courses library from Excel data...');
             STATE.coursesList = [
-                {"id":"course-18","name":"AI Ethics: Ethical Intelligence for 2026","category":"Compliance","url":"https://www.udemy.com/course/chatgpt-ai-ethics-ethical-intelligence/"},
-                {"id":"course-19","name":"Corporate Governance: Principles and Practice","category":"Compliance","url":"https://www.udemy.com/course/corporate-governance-k/"},
-                {"id":"course-20","name":"Employment Laws in South Africa","category":"Compliance","url":"https://www.udemy.com/course/human-resources-labour-law-employment-laws-in-south-africa/"},
-                {"id":"course-17","name":"Professional Ethics & Workplace Integrity Masterclass","category":"Compliance","url":"https://www.udemy.com/course/professional-ethics-mastery/"},
-                {"id":"course-16","name":"The Complete Cyber Security Awareness Training for Employees","category":"Compliance","url":"https://www.udemy.com/course/cybersecurity-for-corporate-employees/"},
-                {"id":"course-10","name":"Business Fundamentals: Marketing Strategy","category":"Function","url":"https://www.udemy.com/course/business-fundamentals-marketing-strategy/"},
-                {"id":"course-6","name":"Canva Master Course 2026","category":"Function","url":"https://www.udemy.com/course/canva-master-course-graphic-design-for-beginners/"},
-                {"id":"course-8","name":"Financial Reporeting & Analysis","category":"Function","url":"https://www.udemy.com/course/financial-reporting-analysis/"},
-                {"id":"course-7","name":"Management Consulting Presentation Essentials Training 2026","category":"Function","url":"https://www.udemy.com/course/management-consulting-presentation-mckinsey/"},
-                {"id":"course-9","name":"The Complete Digital Marketing Guide","category":"Function","url":"https://www.udemy.com/course/digital-marketing-guide/"},
-                {"id":"course-14","name":"Business Model Innovation For Business Growth","category":"Leadership","url":"https://www.udemy.com/course/part-1-business-innovation-for-brand-growth/"},
-                {"id":"course-11","name":"Communication, Leadership & Management","category":"Leadership","url":"https://www.udemy.com/course/high-impact-communication-skills/"},
-                {"id":"course-13","name":"Leadership: Growth Mindset for Leadership and Organizations","category":"Leadership","url":"https://www.udemy.com/course/growth-mindset-for-leadership-and-organizations/"},
-                {"id":"course-12","name":"Leadership: The Emotionally Intelligent Leader","category":"Leadership","url":"https://www.udemy.com/course/the-emotionally-intelligent-leader/"},
-                {"id":"course-15","name":"MBA in a Box: Business Lessons from a CEO","category":"Leadership","url":"https://www.udemy.com/course/mba-in-a-box-business-lessons-from-a-ceo/"},
-                {"id":"course-5","name":"Agentic AI for Beginners","category":"Technology","url":"https://www.udemy.com/course/agentic-ai-for-beginners/"},
-                {"id":"course-2","name":"Claude Code Beginner to Pro","category":"Technology","url":"https://www.udemy.com/course/learn-claude-code/"},
-                {"id":"course-3","name":"The Complete AI Coding Course (2025)","category":"Technology","url":"https://www.udemy.com/course/the-complete-ai-coding-course-2025-cursor-ai-v0-vercel/"},
-                {"id":"course-4","name":"The Complete AI Guide","category":"Technology","url":"https://www.udemy.com/course/complete-ai-guide/"},
-                {"id":"course-1","name":"Udemy: 100 Days of Code","category":"Technology","url":"https://www.udemy.com/course/100-days-of-code/"}
+                {"id":"course-18","name":"AI Ethics: Ethical Intelligence for 2026","category":"Compliance","url":"https://www.udemy.com/course/chatgpt-ai-ethics-ethical-intelligence/","hours":4},
+                {"id":"course-19","name":"Corporate Governance: Principles and Practice","category":"Compliance","url":"https://www.udemy.com/course/corporate-governance-k/","hours":4},
+                {"id":"course-20","name":"Employment Laws in South Africa","category":"Compliance","url":"https://www.udemy.com/course/human-resources-labour-law-employment-laws-in-south-africa/","hours":4},
+                {"id":"course-17","name":"Professional Ethics & Workplace Integrity Masterclass","category":"Compliance","url":"https://www.udemy.com/course/professional-ethics-mastery/","hours":4},
+                {"id":"course-16","name":"The Complete Cyber Security Awareness Training for Employees","category":"Compliance","url":"https://www.udemy.com/course/cybersecurity-for-corporate-employees/","hours":4},
+                {"id":"course-10","name":"Business Fundamentals: Marketing Strategy","category":"Function","url":"https://www.udemy.com/course/business-fundamentals-marketing-strategy/","hours":4},
+                {"id":"course-6","name":"Canva Master Course 2026","category":"Function","url":"https://www.udemy.com/course/canva-master-course-graphic-design-for-beginners/","hours":4},
+                {"id":"course-8","name":"Financial Reporeting & Analysis","category":"Function","url":"https://www.udemy.com/course/financial-reporting-analysis/","hours":4},
+                {"id":"course-7","name":"Management Consulting Presentation Essentials Training 2026","category":"Function","url":"https://www.udemy.com/course/management-consulting-presentation-mckinsey/","hours":4},
+                {"id":"course-9","name":"The Complete Digital Marketing Guide","category":"Function","url":"https://www.udemy.com/course/digital-marketing-guide/","hours":4},
+                {"id":"course-14","name":"Business Model Innovation For Business Growth","category":"Leadership","url":"https://www.udemy.com/course/part-1-business-innovation-for-brand-growth/","hours":4},
+                {"id":"course-11","name":"Communication, Leadership & Management","category":"Leadership","url":"https://www.udemy.com/course/high-impact-communication-skills/","hours":4},
+                {"id":"course-13","name":"Leadership: Growth Mindset for Leadership and Organizations","category":"Leadership","url":"https://www.udemy.com/course/growth-mindset-for-leadership-and-organizations/","hours":4},
+                {"id":"course-12","name":"Leadership: The Emotionally Intelligent Leader","category":"Leadership","url":"https://www.udemy.com/course/the-emotionally-intelligent-leader/","hours":4},
+                {"id":"course-15","name":"MBA in a Box: Business Lessons from a CEO","category":"Leadership","url":"https://www.udemy.com/course/mba-in-a-box-business-lessons-from-a-ceo/","hours":4},
+                {"id":"course-5","name":"Agentic AI for Beginners","category":"Technology","url":"https://www.udemy.com/course/agentic-ai-for-beginners/","hours":4},
+                {"id":"course-2","name":"Claude Code Beginner to Pro","category":"Technology","url":"https://www.udemy.com/course/learn-claude-code/","hours":4},
+                {"id":"course-3","name":"The Complete AI Coding Course (2025)","category":"Technology","url":"https://www.udemy.com/course/the-complete-ai-coding-course-2025-cursor-ai-v0-vercel/","hours":4},
+                {"id":"course-4","name":"The Complete AI Guide","category":"Technology","url":"https://www.udemy.com/course/complete-ai-guide/","hours":4},
+                {"id":"course-1","name":"Udemy: 100 Days of Code","category":"Technology","url":"https://www.udemy.com/course/100-days-of-code/","hours":4}
             ];
             
             this.saveCoursesLibrary();
@@ -792,20 +807,35 @@ const App = {
         // Use filtered data based on global business filter
         const filteredData = this.getFilteredMasteryData();
         
-        // Count hours (assume each completed course = 10 hours)
+        // Calculate hours based on actual course hours and completion percentage
         filteredData.forEach(m => {
-            if (m.completion === 100 && stats[m.category] !== undefined) {
-                stats[m.category] += 10;
+            if (stats[m.category] !== undefined) {
+                // Find the course in the library to get its hours
+                const course = STATE.coursesList.find(c => c.name === m.course);
+                const courseHours = course ? (course.hours || 4) : 4; // Default to 4 hours if not found
+                
+                // Calculate completed hours: (completion % / 100) * course hours
+                const completedHours = (m.completion / 100) * courseHours;
+                stats[m.category] += completedHours;
             }
+        });
+        
+        // Round to 1 decimal place
+        Object.keys(stats).forEach(key => {
+            stats[key] = Math.round(stats[key] * 10) / 10;
         });
         
         // Update UI
         const masteryContent = document.getElementById('mastery-content');
-        const statValues = masteryContent.querySelectorAll('.stat-value');
-        statValues[0].textContent = `${stats['Function']} hrs`;
-        statValues[1].textContent = `${stats['Technology']} hrs`;
-        statValues[2].textContent = `${stats['Leadership']} hrs`;
-        statValues[3].textContent = `${stats['Compliance']} hrs`;
+        if (masteryContent) {
+            const statValues = masteryContent.querySelectorAll('.stat-value');
+            if (statValues.length >= 4) {
+                statValues[0].textContent = `${stats['Function']} hrs`;
+                statValues[1].textContent = `${stats['Technology']} hrs`;
+                statValues[2].textContent = `${stats['Leadership']} hrs`;
+                statValues[3].textContent = `${stats['Compliance']} hrs`;
+            }
+        }
     },
     
     updateCapabilityStats() {
@@ -1467,6 +1497,9 @@ const App = {
                 <div class="course-card ${category}">
                     <div class="course-card-name">
                         ${course.url ? `<a href="${course.url}" target="_blank" title="Open course">${Utils.escapeHtml(course.name)}</a>` : Utils.escapeHtml(course.name)}
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                            <i class="fas fa-clock"></i> ${course.hours || 4} hours
+                        </div>
                     </div>
                     ${STATE.currentUser.type === 'Admin' ? `
                         <div class="course-card-actions">
@@ -1518,12 +1551,15 @@ const App = {
                 document.getElementById('library-course-name').value = course.name;
                 document.getElementById('library-course-category').value = course.category;
                 document.getElementById('library-course-url').value = course.url || '';
+                document.getElementById('library-course-hours').value = course.hours || 4;
             }
         } else {
             // Add mode
             document.getElementById('library-course-modal-title').textContent = 'Add New Course';
             document.getElementById('library-course-id').value = '';
             document.getElementById('library-course-form').reset();
+            // Set default hours
+            document.getElementById('library-course-hours').value = 4;
         }
     },
 
@@ -1532,8 +1568,9 @@ const App = {
         const name = document.getElementById('library-course-name').value.trim();
         const category = document.getElementById('library-course-category').value;
         const url = document.getElementById('library-course-url').value.trim();
+        const hours = parseFloat(document.getElementById('library-course-hours').value);
         
-        if (!name || !category) {
+        if (!name || !category || !hours || hours <= 0) {
             alert('Please fill in all required fields');
             return;
         }
@@ -1541,7 +1578,8 @@ const App = {
         const courseData = {
             name,
             category,
-            url: url || ''
+            url: url || '',
+            hours
         };
         
         if (courseId) {
