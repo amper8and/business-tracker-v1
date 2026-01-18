@@ -5,17 +5,20 @@
 ## 🔗 Links
 
 - **GitHub Repository**: https://github.com/amper8and/business-tracker-v1
-- **Live Preview**: https://3000-ihq1genwp02izdwzy8ojc-6532622b.e2b.dev
-- **Cloudflare Pages**: (Will be deployed below)
+- **Production (Cloudflare Pages)**: https://business-tracker-v1.pages.dev
+- **Latest Deployment**: https://ec51687c.business-tracker-v1.pages.dev
+- **Development Preview**: https://3000-ihq1genwp02izdwzy8ojc-6532622b.e2b.dev
 
 ## 📦 Current Version: **v1.0**
-- **Status**: ✅ Production Ready
+- **Status**: ✅ Live on Cloudflare Pages
+- **Production URL**: https://business-tracker-v1.pages.dev
 - **Latest Features**: 
   - ✅ Local Mastery Tables (no Google Sheets dependency)
   - ✅ Course Library with 20 pre-loaded courses
   - ✅ Performance Dashboard with filters and charts
   - ✅ Total Hours tracking for course completion
   - ✅ Complete user management system
+- **Last Deployed**: January 18, 2026
 
 ## 🎯 Project Overview
 
