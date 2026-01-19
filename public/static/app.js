@@ -1755,7 +1755,7 @@ const App = {
                 <!-- Detail Table -->
                 <div class="detail-section" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h2 style="font-size: 1.25rem; font-weight: 700; color: #111827; margin: 0;">Detailed Breakdown</h2>
+                        <h2 style="font-size: 1.25rem; font-weight: 700; color: #111827; margin: 0;">Service Breakdown</h2>
                         <div style="display: flex; gap: 0.5rem;">
                             <button id="add-perf-service-btn" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
                                 <i class="fas fa-plus"></i> Add Service
