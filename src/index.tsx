@@ -770,6 +770,46 @@ app.get('*', async (c) => {
         </div>
     </div>
 
+    <!-- Daily Data Modal -->
+    <div id="daily-data-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="daily-data-modal-title">Edit Daily Data</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="daily-data-form">
+                    <input type="hidden" id="daily-service-index">
+                    <input type="hidden" id="daily-day-index">
+                    <div class="form-group">
+                        <label for="daily-service-name">Service</label>
+                        <input type="text" id="daily-service-name" disabled style="background: #f3f4f6; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label for="daily-day">Day</label>
+                        <input type="number" id="daily-day" min="1" max="31" disabled style="background: #f3f4f6; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label for="daily-date">Date</label>
+                        <input type="date" id="daily-date" disabled style="background: #f3f4f6; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label for="daily-revenue">Daily Revenue (R) *</label>
+                        <input type="number" id="daily-revenue" placeholder="45000" min="0" step="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="daily-target">Daily Target (R) *</label>
+                        <input type="number" id="daily-target" placeholder="46000" min="0" step="100" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-cancel">Cancel</button>
+                <button id="save-daily-data-btn" class="btn-primary">Save Daily Data</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>

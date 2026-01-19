@@ -1786,6 +1786,36 @@ const App = {
                         </table>
                     </div>
                 </div>
+
+                <!-- Daily Data Table -->
+                <div class="detail-section" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h2 style="font-size: 1.25rem; font-weight: 700; color: #111827; margin: 0;">Daily Data Breakdown</h2>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button id="add-daily-data-btn" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                <i class="fas fa-plus"></i> Add Daily Entry
+                            </button>
+                        </div>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="daily-data-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Service</th>
+                                    <th style="text-align: center; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Day</th>
+                                    <th style="text-align: center; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Date</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Daily Revenue</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Daily Target</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Variance</th>
+                                    <th id="daily-actions-header" style="text-align: center; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="daily-data-tbody">
+                                <!-- Will be populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         `;
         
@@ -1870,6 +1900,8 @@ const App = {
         // Show/hide Add Service button based on user type
         const addServiceBtn = document.getElementById('add-perf-service-btn');
         const actionsHeader = document.getElementById('perf-actions-header');
+        const addDailyDataBtn = document.getElementById('add-daily-data-btn');
+        const dailyActionsHeader = document.getElementById('daily-actions-header');
         
         if (STATE.currentUser.type === 'Admin') {
             if (addServiceBtn) {
@@ -1880,6 +1912,14 @@ const App = {
             if (actionsHeader) {
                 actionsHeader.style.display = 'table-cell';
             }
+            if (addDailyDataBtn) {
+                addDailyDataBtn.style.display = 'inline-flex';
+                addDailyDataBtn.style.cursor = 'pointer';
+                addDailyDataBtn.style.opacity = '1';
+            }
+            if (dailyActionsHeader) {
+                dailyActionsHeader.style.display = 'table-cell';
+            }
         } else {
             if (addServiceBtn) {
                 addServiceBtn.style.display = 'inline-flex';
@@ -1889,6 +1929,15 @@ const App = {
             }
             if (actionsHeader) {
                 actionsHeader.style.display = 'none';
+            }
+            if (addDailyDataBtn) {
+                addDailyDataBtn.style.display = 'inline-flex';
+                addDailyDataBtn.style.cursor = 'not-allowed';
+                addDailyDataBtn.style.opacity = '0.5';
+                addDailyDataBtn.disabled = true;
+            }
+            if (dailyActionsHeader) {
+                dailyActionsHeader.style.display = 'none';
             }
         }
         
@@ -1910,6 +1959,18 @@ const App = {
         
         // Save service button
         document.getElementById('save-perf-service-btn')?.addEventListener('click', () => this.savePerformanceService());
+        
+        // Add daily data button (Admin only)
+        document.getElementById('add-daily-data-btn')?.addEventListener('click', () => {
+            if (STATE.currentUser.type === 'Admin') {
+                alert('Add Daily Entry functionality - Please edit existing entries from the table');
+            } else {
+                alert('Only Admins can edit daily data');
+            }
+        });
+        
+        // Save daily data button
+        document.getElementById('save-daily-data-btn')?.addEventListener('click', () => this.saveDailyData());
     },
     
     renderPerformanceDashboard() {
@@ -1969,6 +2030,9 @@ const App = {
         
         // Render detail table
         this.renderPerformanceTable(filteredServices);
+        
+        // Render daily data table
+        this.renderDailyDataTable(filteredServices);
     },
     
     renderPerformanceCharts(services, showTargetToDate) {
@@ -2255,6 +2319,124 @@ const App = {
         if (stored) {
             STATE.performanceData = JSON.parse(stored);
             console.log('Loaded performance data from localStorage');
+        }
+    },
+    
+    renderDailyDataTable(services) {
+        const tbody = document.getElementById('daily-data-tbody');
+        if (!tbody) return;
+        
+        const isAdmin = STATE.currentUser.type === 'Admin';
+        const rows = [];
+        
+        // Flatten all daily data from all services
+        services.forEach((service, serviceIndex) => {
+            if (service.dailyData && service.dailyData.length > 0) {
+                service.dailyData.forEach((day, dayIndex) => {
+                    const variance = day.revenue - day.target;
+                    const varianceColor = variance >= 0 ? '#10b981' : '#ef4444';
+                    const varianceIcon = variance >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+                    
+                    const actionsCell = isAdmin ? `
+                        <td style="padding: 0.75rem; text-align: center;">
+                            <button class="btn-icon" onclick="App.editDailyData(${serviceIndex}, ${dayIndex})" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    ` : '';
+                    
+                    rows.push(`
+                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                            <td style="padding: 0.75rem; font-weight: 500;">${service.name}</td>
+                            <td style="padding: 0.75rem; text-align: center;">${day.day}</td>
+                            <td style="padding: 0.75rem; text-align: center;">${day.date}</td>
+                            <td style="padding: 0.75rem; text-align: right; font-weight: 600;">R ${(day.revenue / 1000).toFixed(1)}K</td>
+                            <td style="padding: 0.75rem; text-align: right;">R ${(day.target / 1000).toFixed(1)}K</td>
+                            <td style="padding: 0.75rem; text-align: right; color: ${varianceColor}; font-weight: 600;">
+                                <i class="fas ${varianceIcon}"></i> R ${Math.abs(variance / 1000).toFixed(1)}K
+                            </td>
+                            ${actionsCell}
+                        </tr>
+                    `);
+                });
+            }
+        });
+        
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">No daily data available</td></tr>';
+        } else {
+            tbody.innerHTML = rows.join('');
+        }
+    },
+    
+    editDailyData(serviceIndex, dayIndex) {
+        if (STATE.currentUser.type !== 'Admin') {
+            alert('Only Admins can edit daily data');
+            return;
+        }
+        
+        const service = STATE.performanceData.services[serviceIndex];
+        const day = service.dailyData[dayIndex];
+        
+        if (!service || !day) {
+            alert('Error: Daily data not found');
+            return;
+        }
+        
+        // Open modal with data
+        const modal = document.getElementById('daily-data-modal');
+        const title = document.getElementById('daily-data-modal-title');
+        
+        if (!modal) return;
+        
+        title.textContent = 'Edit Daily Data';
+        document.getElementById('daily-service-index').value = serviceIndex;
+        document.getElementById('daily-day-index').value = dayIndex;
+        document.getElementById('daily-service-name').value = service.name;
+        document.getElementById('daily-day').value = day.day;
+        document.getElementById('daily-date').value = day.date;
+        document.getElementById('daily-revenue').value = day.revenue;
+        document.getElementById('daily-target').value = day.target;
+        
+        Utils.show('daily-data-modal');
+    },
+    
+    saveDailyData() {
+        const serviceIndex = parseInt(document.getElementById('daily-service-index').value);
+        const dayIndex = parseInt(document.getElementById('daily-day-index').value);
+        const revenue = parseInt(document.getElementById('daily-revenue').value);
+        const target = parseInt(document.getElementById('daily-target').value);
+        
+        if (isNaN(serviceIndex) || isNaN(dayIndex) || isNaN(revenue) || isNaN(target)) {
+            alert('Please fill in all required fields');
+            return;
+        }
+        
+        // Update the daily data
+        const service = STATE.performanceData.services[serviceIndex];
+        if (service && service.dailyData[dayIndex]) {
+            service.dailyData[dayIndex].revenue = revenue;
+            service.dailyData[dayIndex].target = target;
+            
+            // Recalculate MTD values
+            const totalRevenue = service.dailyData.reduce((sum, day) => sum + day.revenue, 0);
+            const totalTarget = service.dailyData.reduce((sum, day) => sum + day.target, 0);
+            service.mtdRevenue = totalRevenue;
+            service.mtdTarget = totalTarget;
+            service.actualRunRate = Math.round(totalRevenue / service.dailyData.length);
+            service.requiredRunRate = Math.round(totalTarget / service.dailyData.length);
+            
+            // Save to localStorage
+            this.savePerformanceData();
+            
+            console.log('Updated daily data for', service.name, 'day', service.dailyData[dayIndex].day);
+            
+            // Close modal and refresh dashboard
+            Utils.hide('daily-data-modal');
+            this.renderPerformanceDashboard();
+            this.setupPerformanceFilters(); // Refresh filters
+        } else {
+            alert('Error: Could not update daily data');
         }
     },
     
