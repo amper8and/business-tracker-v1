@@ -1756,9 +1756,14 @@ const App = {
                 <div class="detail-section" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h2 style="font-size: 1.25rem; font-weight: 700; color: #111827; margin: 0;">Detailed Breakdown</h2>
-                        <button id="export-perf-csv" class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-                            <i class="fas fa-download"></i> Export CSV
-                        </button>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button id="add-perf-service-btn" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                <i class="fas fa-plus"></i> Add Service
+                            </button>
+                            <button id="export-perf-csv" class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                <i class="fas fa-download"></i> Export CSV
+                            </button>
+                        </div>
                     </div>
                     <div style="overflow-x: auto;">
                         <table class="data-table" id="performance-detail-table">
@@ -1772,6 +1777,7 @@ const App = {
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Actual Run Rate</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Required Run Rate</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Subscriber Base</th>
+                                    <th id="perf-actions-header" style="text-align: center; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="performance-detail-tbody">
@@ -1791,36 +1797,43 @@ const App = {
     },
     
     generatePerformanceData() {
-        // Generate sample performance data based on the GitHub repo structure
-        STATE.performanceData = {
-            services: [
-                {
-                    name: 'YoGamezPro',
-                    category: 'Content Business',
-                    mtdRevenue: 1250000,
-                    mtdTarget: 1200000,
-                    actualRunRate: 48076,
-                    requiredRunRate: 50000,
-                    subscriberBase: 85000,
-                    dailyData: this.generateDailyData(1250000, 1200000, 26)
-                },
-                {
-                    name: 'MobiStream',
-                    category: 'Content Business',
-                    mtdRevenue: 850000,
-                    mtdTarget: 800000,
-                    actualRunRate: 32692,
-                    requiredRunRate: 35000,
-                    subscriberBase: 69000,
-                    dailyData: this.generateDailyData(850000, 800000, 26)
+        // Check if data exists in localStorage first
+        this.loadPerformanceData();
+        
+        // If no stored data, generate sample data
+        if (!STATE.performanceData || !STATE.performanceData.services) {
+            STATE.performanceData = {
+                services: [
+                    {
+                        name: 'YoGamezPro',
+                        category: 'Content Business',
+                        mtdRevenue: 1250000,
+                        mtdTarget: 1200000,
+                        actualRunRate: 48076,
+                        requiredRunRate: 50000,
+                        subscriberBase: 85000,
+                        dailyData: this.generateDailyData(1250000, 1200000, 26)
+                    },
+                    {
+                        name: 'MobiStream',
+                        category: 'Content Business',
+                        mtdRevenue: 850000,
+                        mtdTarget: 800000,
+                        actualRunRate: 32692,
+                        requiredRunRate: 35000,
+                        subscriberBase: 69000,
+                        dailyData: this.generateDailyData(850000, 800000, 26)
+                    }
+                ],
+                filters: {
+                    category: 'All',
+                    service: 'All',
+                    month: '2025-01'
                 }
-            ],
-            filters: {
-                category: 'All',
-                service: 'All',
-                month: '2025-01'
-            }
-        };
+            };
+            // Save the initial data
+            this.savePerformanceData();
+        }
     },
     
     generateDailyData(mtdRevenue, mtdTarget, days) {
@@ -1854,12 +1867,49 @@ const App = {
             });
         }
         
+        // Show/hide Add Service button based on user type
+        const addServiceBtn = document.getElementById('add-perf-service-btn');
+        const actionsHeader = document.getElementById('perf-actions-header');
+        
+        if (STATE.currentUser.type === 'Admin') {
+            if (addServiceBtn) {
+                addServiceBtn.style.display = 'inline-flex';
+                addServiceBtn.style.cursor = 'pointer';
+                addServiceBtn.style.opacity = '1';
+            }
+            if (actionsHeader) {
+                actionsHeader.style.display = 'table-cell';
+            }
+        } else {
+            if (addServiceBtn) {
+                addServiceBtn.style.display = 'inline-flex';
+                addServiceBtn.style.cursor = 'not-allowed';
+                addServiceBtn.style.opacity = '0.5';
+                addServiceBtn.disabled = true;
+            }
+            if (actionsHeader) {
+                actionsHeader.style.display = 'none';
+            }
+        }
+        
         // Attach filter change listeners
         document.getElementById('perf-category-filter')?.addEventListener('change', () => this.renderPerformanceDashboard());
         document.getElementById('perf-service-filter')?.addEventListener('change', () => this.renderPerformanceDashboard());
         document.getElementById('perf-month-filter')?.addEventListener('change', () => this.renderPerformanceDashboard());
         document.getElementById('toggle-target-to-date')?.addEventListener('change', () => this.renderPerformanceDashboard());
         document.getElementById('export-perf-csv')?.addEventListener('click', () => this.exportPerformanceData());
+        
+        // Add service button (Admin only)
+        document.getElementById('add-perf-service-btn')?.addEventListener('click', () => {
+            if (STATE.currentUser.type === 'Admin') {
+                this.showPerformanceServiceModal();
+            } else {
+                alert('Only Admins can add services');
+            }
+        });
+        
+        // Save service button
+        document.getElementById('save-perf-service-btn')?.addEventListener('click', () => this.savePerformanceService());
     },
     
     renderPerformanceDashboard() {
@@ -2048,11 +2098,24 @@ const App = {
         const tbody = document.getElementById('performance-detail-tbody');
         if (!tbody) return;
         
-        tbody.innerHTML = services.map(service => {
+        const isAdmin = STATE.currentUser.type === 'Admin';
+        
+        tbody.innerHTML = services.map((service, index) => {
             const variance = service.mtdRevenue - service.mtdTarget;
             const variancePercent = ((variance / service.mtdTarget) * 100).toFixed(1);
             const varianceColor = variance >= 0 ? '#10b981' : '#ef4444';
             const varianceIcon = variance >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+            
+            const actionsCell = isAdmin ? `
+                <td style="padding: 0.75rem; text-align: center;">
+                    <button class="btn-icon" onclick="App.editPerformanceService(${index})" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-icon btn-danger" onclick="App.deletePerformanceService(${index})" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            ` : '';
             
             return `
                 <tr style="border-bottom: 1px solid #e5e7eb;">
@@ -2066,6 +2129,7 @@ const App = {
                     <td style="padding: 0.75rem; text-align: right;">R ${(service.actualRunRate / 1000).toFixed(0)}K</td>
                     <td style="padding: 0.75rem; text-align: right;">R ${(service.requiredRunRate / 1000).toFixed(0)}K</td>
                     <td style="padding: 0.75rem; text-align: right;">${(service.subscriberBase / 1000).toFixed(1)}K</td>
+                    ${actionsCell}
                 </tr>
             `;
         }).join('');
@@ -2074,6 +2138,124 @@ const App = {
     exportPerformanceData() {
         // Simple CSV export
         alert('CSV export functionality would download filtered performance data here');
+    },
+    
+    showPerformanceServiceModal(serviceIndex = null) {
+        const modal = document.getElementById('performance-service-modal');
+        const title = document.getElementById('perf-service-modal-title');
+        const form = document.getElementById('performance-service-form');
+        
+        if (!modal || !form) return;
+        
+        // Reset form
+        form.reset();
+        document.getElementById('perf-service-id').value = '';
+        
+        if (serviceIndex !== null && STATE.performanceData.services[serviceIndex]) {
+            // Edit mode
+            const service = STATE.performanceData.services[serviceIndex];
+            title.textContent = 'Edit Service';
+            document.getElementById('perf-service-id').value = serviceIndex;
+            document.getElementById('perf-service-name').value = service.name;
+            document.getElementById('perf-service-category').value = service.category;
+            document.getElementById('perf-service-mtd-revenue').value = service.mtdRevenue;
+            document.getElementById('perf-service-mtd-target').value = service.mtdTarget;
+            document.getElementById('perf-service-actual-runrate').value = service.actualRunRate;
+            document.getElementById('perf-service-required-runrate').value = service.requiredRunRate;
+            document.getElementById('perf-service-subscriber-base').value = service.subscriberBase;
+        } else {
+            // Add mode
+            title.textContent = 'Add Service';
+        }
+        
+        Utils.show('performance-service-modal');
+    },
+    
+    savePerformanceService() {
+        // Get form values
+        const serviceIndex = document.getElementById('perf-service-id').value;
+        const name = document.getElementById('perf-service-name').value.trim();
+        const category = document.getElementById('perf-service-category').value;
+        const mtdRevenue = parseInt(document.getElementById('perf-service-mtd-revenue').value);
+        const mtdTarget = parseInt(document.getElementById('perf-service-mtd-target').value);
+        const actualRunRate = parseInt(document.getElementById('perf-service-actual-runrate').value);
+        const requiredRunRate = parseInt(document.getElementById('perf-service-required-runrate').value);
+        const subscriberBase = parseInt(document.getElementById('perf-service-subscriber-base').value);
+        
+        // Validate required fields
+        if (!name || !category || isNaN(mtdRevenue) || isNaN(mtdTarget) || isNaN(actualRunRate) || isNaN(requiredRunRate) || isNaN(subscriberBase)) {
+            alert('Please fill in all required fields');
+            return;
+        }
+        
+        // Create service object
+        const serviceData = {
+            name: name,
+            category: category,
+            mtdRevenue: mtdRevenue,
+            mtdTarget: mtdTarget,
+            actualRunRate: actualRunRate,
+            requiredRunRate: requiredRunRate,
+            subscriberBase: subscriberBase,
+            dailyData: this.generateDailyData(mtdRevenue, mtdTarget, 26)
+        };
+        
+        if (serviceIndex !== '') {
+            // Update existing service
+            STATE.performanceData.services[parseInt(serviceIndex)] = serviceData;
+            console.log('Updated service:', name);
+        } else {
+            // Add new service
+            STATE.performanceData.services.push(serviceData);
+            console.log('Added new service:', name);
+        }
+        
+        // Save to localStorage
+        this.savePerformanceData();
+        
+        // Close modal and refresh dashboard
+        Utils.hide('performance-service-modal');
+        this.renderPerformanceDashboard();
+        this.setupPerformanceFilters(); // Refresh service dropdown
+    },
+    
+    editPerformanceService(serviceIndex) {
+        if (STATE.currentUser.type !== 'Admin') {
+            alert('Only Admins can edit services');
+            return;
+        }
+        this.showPerformanceServiceModal(serviceIndex);
+    },
+    
+    deletePerformanceService(serviceIndex) {
+        if (STATE.currentUser.type !== 'Admin') {
+            alert('Only Admins can delete services');
+            return;
+        }
+        
+        const service = STATE.performanceData.services[serviceIndex];
+        if (!service) return;
+        
+        if (confirm(`Are you sure you want to delete "${service.name}"?`)) {
+            STATE.performanceData.services.splice(serviceIndex, 1);
+            this.savePerformanceData();
+            console.log('Deleted service:', service.name);
+            this.renderPerformanceDashboard();
+            this.setupPerformanceFilters(); // Refresh service dropdown
+        }
+    },
+    
+    savePerformanceData() {
+        localStorage.setItem('performanceData', JSON.stringify(STATE.performanceData));
+        console.log('Saved performance data to localStorage');
+    },
+    
+    loadPerformanceData() {
+        const stored = localStorage.getItem('performanceData');
+        if (stored) {
+            STATE.performanceData = JSON.parse(stored);
+            console.log('Loaded performance data from localStorage');
+        }
     },
     
     // Kanban View

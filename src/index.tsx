@@ -719,6 +719,57 @@ app.get('*', async (c) => {
         </div>
     </div>
 
+    <!-- Performance Service Modal -->
+    <div id="performance-service-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="perf-service-modal-title">Add Service</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="performance-service-form">
+                    <input type="hidden" id="perf-service-id">
+                    <div class="form-group">
+                        <label for="perf-service-name">Service Name *</label>
+                        <input type="text" id="perf-service-name" placeholder="e.g., YoGamezPro" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="perf-service-category">Category *</label>
+                        <select id="perf-service-category" required>
+                            <option value="">Select a category</option>
+                            <option value="Content Business">Content Business</option>
+                            <option value="Channel Business">Channel Business</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="perf-service-mtd-revenue">MTD Revenue (R) *</label>
+                        <input type="number" id="perf-service-mtd-revenue" placeholder="1250000" min="0" step="1000" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="perf-service-mtd-target">MTD Target (R) *</label>
+                        <input type="number" id="perf-service-mtd-target" placeholder="1200000" min="0" step="1000" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="perf-service-actual-runrate">Actual Run Rate (R/day) *</label>
+                        <input type="number" id="perf-service-actual-runrate" placeholder="48076" min="0" step="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="perf-service-required-runrate">Required Run Rate (R/day) *</label>
+                        <input type="number" id="perf-service-required-runrate" placeholder="50000" min="0" step="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="perf-service-subscriber-base">Subscriber Base *</label>
+                        <input type="number" id="perf-service-subscriber-base" placeholder="85000" min="0" step="100" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-cancel">Cancel</button>
+                <button id="save-perf-service-btn" class="btn-primary">Save Service</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
