@@ -810,13 +810,64 @@ app.get('*', async (c) => {
         </div>
     </div>
 
+    <!-- Bulk Daily Edit Modal -->
+    <div id="bulk-daily-edit-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 95%; width: 1400px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2>Edit Multiple Entries</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 1.5rem;">
+                <!-- Filter Controls -->
+                <div style="background: #f9fafb; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+                    <div class="filter-group" style="flex: 1; min-width: 200px;">
+                        <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Month</label>
+                        <select id="bulk-edit-month" class="filter-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem;">
+                            <option value="2025-01">January 2025</option>
+                            <option value="2024-12">December 2024</option>
+                            <option value="2024-11">November 2024</option>
+                        </select>
+                    </div>
+                    <div class="filter-group" style="flex: 1; min-width: 200px;">
+                        <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Service</label>
+                        <select id="bulk-edit-service" class="filter-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem;">
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Editable Data Table -->
+                <div style="overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+                    <table class="data-table" id="bulk-edit-table" style="width: 100%; min-width: 800px;">
+                        <thead style="background: #f9fafb;">
+                            <tr>
+                                <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Service</th>
+                                <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Day</th>
+                                <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Date</th>
+                                <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Daily Revenue (R)</th>
+                                <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Daily Target (R)</th>
+                                <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Variance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulk-edit-tbody">
+                            <!-- Will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-cancel">Cancel</button>
+                <button id="save-bulk-daily-btn" class="btn-primary">Save All Changes</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="/static/app.js" type="module"></script>
+    <script src="/static/app.js"></script>
 </body>
-</html>`)
+</html>
+    `)
   } catch (error) {
     return c.text('Error loading application', 500)
   }

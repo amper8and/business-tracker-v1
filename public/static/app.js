@@ -1792,8 +1792,8 @@ const App = {
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h2 style="font-size: 1.25rem; font-weight: 700; color: #111827; margin: 0;">Daily Data Breakdown</h2>
                         <div style="display: flex; gap: 0.5rem;">
-                            <button id="add-daily-data-btn" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-                                <i class="fas fa-plus"></i> Add Daily Entry
+                            <button id="edit-multiple-entries-btn" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                <i class="fas fa-table"></i> Edit Multiple Entries
                             </button>
                         </div>
                     </div>
@@ -1900,7 +1900,7 @@ const App = {
         // Show/hide Add Service button based on user type
         const addServiceBtn = document.getElementById('add-perf-service-btn');
         const actionsHeader = document.getElementById('perf-actions-header');
-        const addDailyDataBtn = document.getElementById('add-daily-data-btn');
+        const editMultipleBtn = document.getElementById('edit-multiple-entries-btn');
         const dailyActionsHeader = document.getElementById('daily-actions-header');
         
         if (STATE.currentUser.type === 'Admin') {
@@ -1912,10 +1912,10 @@ const App = {
             if (actionsHeader) {
                 actionsHeader.style.display = 'table-cell';
             }
-            if (addDailyDataBtn) {
-                addDailyDataBtn.style.display = 'inline-flex';
-                addDailyDataBtn.style.cursor = 'pointer';
-                addDailyDataBtn.style.opacity = '1';
+            if (editMultipleBtn) {
+                editMultipleBtn.style.display = 'inline-flex';
+                editMultipleBtn.style.cursor = 'pointer';
+                editMultipleBtn.style.opacity = '1';
             }
             if (dailyActionsHeader) {
                 dailyActionsHeader.style.display = 'table-cell';
@@ -1930,11 +1930,11 @@ const App = {
             if (actionsHeader) {
                 actionsHeader.style.display = 'none';
             }
-            if (addDailyDataBtn) {
-                addDailyDataBtn.style.display = 'inline-flex';
-                addDailyDataBtn.style.cursor = 'not-allowed';
-                addDailyDataBtn.style.opacity = '0.5';
-                addDailyDataBtn.disabled = true;
+            if (editMultipleBtn) {
+                editMultipleBtn.style.display = 'inline-flex';
+                editMultipleBtn.style.cursor = 'not-allowed';
+                editMultipleBtn.style.opacity = '0.5';
+                editMultipleBtn.disabled = true;
             }
             if (dailyActionsHeader) {
                 dailyActionsHeader.style.display = 'none';
@@ -1960,17 +1960,24 @@ const App = {
         // Save service button
         document.getElementById('save-perf-service-btn')?.addEventListener('click', () => this.savePerformanceService());
         
-        // Add daily data button (Admin only)
-        document.getElementById('add-daily-data-btn')?.addEventListener('click', () => {
+        // Edit multiple entries button (Admin only)
+        document.getElementById('edit-multiple-entries-btn')?.addEventListener('click', () => {
             if (STATE.currentUser.type === 'Admin') {
-                alert('Add Daily Entry functionality - Please edit existing entries from the table');
+                this.showBulkDailyEdit();
             } else {
-                alert('Only Admins can edit daily data');
+                alert('Only Admins can edit multiple entries');
             }
         });
         
         // Save daily data button
         document.getElementById('save-daily-data-btn')?.addEventListener('click', () => this.saveDailyData());
+        
+        // Bulk edit save button
+        document.getElementById('save-bulk-daily-btn')?.addEventListener('click', () => this.saveBulkDailyData());
+        
+        // Bulk edit filters
+        document.getElementById('bulk-edit-month')?.addEventListener('change', () => this.renderBulkEditTable());
+        document.getElementById('bulk-edit-service')?.addEventListener('change', () => this.renderBulkEditTable());
     },
     
     renderPerformanceDashboard() {
@@ -2437,6 +2444,162 @@ const App = {
             this.setupPerformanceFilters(); // Refresh filters
         } else {
             alert('Error: Could not update daily data');
+        }
+    },
+    
+    showBulkDailyEdit() {
+        if (STATE.currentUser.type !== 'Admin') {
+            alert('Only Admins can edit daily data');
+            return;
+        }
+        
+        const modal = document.getElementById('bulk-daily-edit-modal');
+        if (!modal) return;
+        
+        // Initialize with current month and all services
+        const currentDate = new Date();
+        const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+        
+        document.getElementById('bulk-edit-month').value = currentMonth;
+        document.getElementById('bulk-edit-service').value = 'all';
+        
+        // Populate service filter dropdown
+        const serviceFilter = document.getElementById('bulk-edit-service');
+        serviceFilter.innerHTML = '<option value="all">All Services</option>';
+        STATE.performanceData.services.forEach((service, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = service.name;
+            serviceFilter.appendChild(option);
+        });
+        
+        this.renderBulkEditTable();
+        Utils.show('bulk-daily-edit-modal');
+    },
+    
+    renderBulkEditTable() {
+        const selectedMonth = document.getElementById('bulk-edit-month').value;
+        const selectedService = document.getElementById('bulk-edit-service').value;
+        const tbody = document.getElementById('bulk-edit-tbody');
+        
+        if (!tbody) return;
+        
+        const rows = [];
+        const currentDate = new Date();
+        const [year, month] = selectedMonth.split('-').map(Number);
+        
+        // Determine how many days to show
+        let daysToShow;
+        if (year === currentDate.getFullYear() && month === currentDate.getMonth() + 1) {
+            // Current month - show up to today
+            daysToShow = currentDate.getDate();
+        } else {
+            // Previous month - show full month
+            daysToShow = new Date(year, month, 0).getDate();
+        }
+        
+        // Filter services
+        const servicesToShow = selectedService === 'all' 
+            ? STATE.performanceData.services 
+            : [STATE.performanceData.services[parseInt(selectedService)]];
+        
+        servicesToShow.forEach((service) => {
+            const actualServiceIndex = selectedService === 'all' 
+                ? STATE.performanceData.services.indexOf(service) 
+                : parseInt(selectedService);
+            
+            // Show only days up to daysToShow
+            for (let i = 0; i < Math.min(daysToShow, service.dailyData.length); i++) {
+                const day = service.dailyData[i];
+                const variance = day.revenue - day.target;
+                const variancePercent = day.target > 0 ? ((variance / day.target) * 100).toFixed(1) : 0;
+                const varianceColor = variance >= 0 ? '#10b981' : '#ef4444';
+                
+                rows.push(`
+                    <tr data-service-idx="${actualServiceIndex}" data-day-idx="${i}">
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${service.name}</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${day.day}</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${day.date}</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                            <input type="number" 
+                                   class="bulk-edit-revenue" 
+                                   data-service-idx="${actualServiceIndex}" 
+                                   data-day-idx="${i}"
+                                   value="${day.revenue}" 
+                                   style="width: 120px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                            <input type="number" 
+                                   class="bulk-edit-target" 
+                                   data-service-idx="${actualServiceIndex}" 
+                                   data-day-idx="${i}"
+                                   value="${day.target}" 
+                                   style="width: 120px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; color: ${varianceColor}; font-weight: 600;">
+                            ${variance >= 0 ? '+' : ''}R ${(variance / 1000).toFixed(0)}K (${variancePercent}%)
+                        </td>
+                    </tr>
+                `);
+            }
+        });
+        
+        tbody.innerHTML = rows.length > 0 
+            ? rows.join('') 
+            : '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">No data available</td></tr>';
+    },
+    
+    saveBulkDailyData() {
+        // Collect all edited values
+        const revenueInputs = document.querySelectorAll('.bulk-edit-revenue');
+        const targetInputs = document.querySelectorAll('.bulk-edit-target');
+        
+        let hasChanges = false;
+        
+        revenueInputs.forEach(input => {
+            const serviceIdx = parseInt(input.dataset.serviceIdx);
+            const dayIdx = parseInt(input.dataset.dayIdx);
+            const newRevenue = parseInt(input.value);
+            
+            if (!isNaN(newRevenue) && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
+                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].revenue = newRevenue;
+                hasChanges = true;
+            }
+        });
+        
+        targetInputs.forEach(input => {
+            const serviceIdx = parseInt(input.dataset.serviceIdx);
+            const dayIdx = parseInt(input.dataset.dayIdx);
+            const newTarget = parseInt(input.value);
+            
+            if (!isNaN(newTarget) && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
+                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].target = newTarget;
+                hasChanges = true;
+            }
+        });
+        
+        if (hasChanges) {
+            // Recalculate MTD values for all services
+            STATE.performanceData.services.forEach(service => {
+                const totalRevenue = service.dailyData.reduce((sum, day) => sum + day.revenue, 0);
+                const totalTarget = service.dailyData.reduce((sum, day) => sum + day.target, 0);
+                service.mtdRevenue = totalRevenue;
+                service.mtdTarget = totalTarget;
+                service.actualRunRate = Math.round(totalRevenue / service.dailyData.length);
+                service.requiredRunRate = Math.round(totalTarget / service.dailyData.length);
+            });
+            
+            // Save to localStorage
+            this.savePerformanceData();
+            
+            console.log('Bulk daily data saved successfully');
+            
+            // Close modal and refresh dashboard
+            Utils.hide('bulk-daily-edit-modal');
+            this.renderPerformanceDashboard();
+            this.setupPerformanceFilters();
+        } else {
+            alert('No changes detected');
         }
     },
     
