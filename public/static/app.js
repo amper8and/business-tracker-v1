@@ -702,15 +702,28 @@ const App = {
         console.log('updateScorecardData() called');
         
         // Update performance KPIs
-        if (STATE.performanceData) {
+        if (STATE.performanceData && STATE.performanceData.services) {
             const perfContent = document.getElementById('performance-content');
             if (perfContent) {
                 const kpis = perfContent.querySelectorAll('.kpi-value');
                 if (kpis.length >= 4) {
-                    kpis[0].textContent = STATE.performanceData.mtdRevenue;
-                    kpis[1].textContent = STATE.performanceData.actualRunRate;
-                    kpis[2].textContent = STATE.performanceData.totalBase;
-                    kpis[3].textContent = STATE.performanceData.revenueToday;
+                    // Calculate aggregated values from all services
+                    const services = STATE.performanceData.services;
+                    const totalMtdRevenue = services.reduce((sum, s) => sum + s.mtdRevenue, 0);
+                    const totalActualRunRate = services.reduce((sum, s) => sum + s.actualRunRate, 0);
+                    const totalSubscriberBase = services.reduce((sum, s) => sum + s.subscriberBase, 0);
+                    
+                    // Get today's revenue (last day from all services)
+                    const todayRevenue = services.reduce((sum, s) => {
+                        const lastDay = s.dailyData[s.dailyData.length - 1];
+                        return sum + (lastDay ? lastDay.revenue : 0);
+                    }, 0);
+                    
+                    // Format values
+                    kpis[0].textContent = `R ${(totalMtdRevenue / 1000000).toFixed(1)}M`;
+                    kpis[1].textContent = `R ${(totalActualRunRate / 1000).toFixed(0)}K/day`;
+                    kpis[2].textContent = `${(totalSubscriberBase / 1000).toFixed(0)}K`;
+                    kpis[3].textContent = `R ${(todayRevenue / 1000).toFixed(0)}K`;
                 }
             }
         }
