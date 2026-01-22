@@ -2617,6 +2617,30 @@ const App = {
         
         if (!modal || !form) return;
         
+        // Populate country dropdown
+        const countrySelect = document.getElementById('perf-service-country');
+        if (countrySelect && typeof COUNTRIES !== 'undefined') {
+            countrySelect.innerHTML = '<option value="">Select a country</option>';
+            COUNTRIES.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                countrySelect.appendChild(option);
+            });
+        }
+        
+        // Populate currency dropdown
+        const currencySelect = document.getElementById('perf-service-currency');
+        if (currencySelect && typeof CURRENCIES !== 'undefined') {
+            currencySelect.innerHTML = '<option value="">Select currency</option>';
+            CURRENCIES.forEach(currency => {
+                const option = document.createElement('option');
+                option.value = currency;
+                option.textContent = currency;
+                currencySelect.appendChild(option);
+            });
+        }
+        
         // Reset form
         form.reset();
         document.getElementById('perf-service-id').value = '';
@@ -2628,6 +2652,10 @@ const App = {
             document.getElementById('perf-service-id').value = serviceIndex;
             document.getElementById('perf-service-name').value = service.name;
             document.getElementById('perf-service-category').value = service.category;
+            document.getElementById('perf-service-account').value = service.account || '';
+            document.getElementById('perf-service-country').value = service.country || '';
+            document.getElementById('perf-service-currency').value = service.currency || 'ZAR';
+            document.getElementById('perf-service-zar-rate').value = service.zarRate || 1.0;
             document.getElementById('perf-service-mtd-revenue').value = service.mtdRevenue;
             document.getElementById('perf-service-mtd-target').value = service.mtdTarget;
             document.getElementById('perf-service-actual-runrate').value = service.actualRunRate;
@@ -2636,6 +2664,8 @@ const App = {
         } else {
             // Add mode
             title.textContent = 'Add Service';
+            // Set default ZAR rate
+            document.getElementById('perf-service-zar-rate').value = 1.0;
         }
         
         Utils.show('performance-service-modal');
@@ -2646,6 +2676,10 @@ const App = {
         const serviceIndex = document.getElementById('perf-service-id').value;
         const name = document.getElementById('perf-service-name').value.trim();
         const category = document.getElementById('perf-service-category').value;
+        const account = document.getElementById('perf-service-account').value.trim();
+        const country = document.getElementById('perf-service-country').value;
+        const currency = document.getElementById('perf-service-currency').value;
+        const zarRate = parseFloat(document.getElementById('perf-service-zar-rate').value);
         const mtdRevenue = parseInt(document.getElementById('perf-service-mtd-revenue').value);
         const mtdTarget = parseInt(document.getElementById('perf-service-mtd-target').value);
         const actualRunRate = parseInt(document.getElementById('perf-service-actual-runrate').value);
@@ -2653,21 +2687,45 @@ const App = {
         const subscriberBase = parseInt(document.getElementById('perf-service-subscriber-base').value);
         
         // Validate required fields
-        if (!name || !category || isNaN(mtdRevenue) || isNaN(mtdTarget) || isNaN(actualRunRate) || isNaN(requiredRunRate) || isNaN(subscriberBase)) {
+        if (!name || !category || !account || !country || !currency || isNaN(zarRate) || 
+            isNaN(mtdRevenue) || isNaN(mtdTarget) || isNaN(actualRunRate) || 
+            isNaN(requiredRunRate) || isNaN(subscriberBase)) {
             alert('Please fill in all required fields');
             return;
         }
+        
+        if (zarRate <= 0) {
+            alert('ZAR Rate must be greater than 0');
+            return;
+        }
+        
+        // Generate daily data with new structure
+        const dailyData = this.generateDailyData(name, account, country, currency, zarRate, 26, subscriberBase);
+        
+        // Calculate MTD Net Additions from dailyData
+        const mtdNetAdditions = dailyData.reduce((sum, day) => sum + day.netAdditions, 0);
+        
+        // Get service version and SKU from first day's data
+        const serviceVersion = dailyData[0].serviceVersion;
+        const serviceSKU = dailyData[0].serviceSKU;
         
         // Create service object
         const serviceData = {
             name: name,
             category: category,
+            account: account,
+            country: country,
+            serviceVersion: serviceVersion,
+            serviceSKU: serviceSKU,
+            currency: currency,
+            zarRate: zarRate,
             mtdRevenue: mtdRevenue,
             mtdTarget: mtdTarget,
             actualRunRate: actualRunRate,
             requiredRunRate: requiredRunRate,
-            subscriberBase: subscriberBase,
-            dailyData: this.generateDailyData(mtdRevenue, mtdTarget, 26)
+            subscriberBase: dailyData[dailyData.length - 1].subscriberBase,
+            mtdNetAdditions: mtdNetAdditions,
+            dailyData: dailyData
         };
         
         if (serviceIndex !== '') {
@@ -2916,6 +2974,14 @@ const App = {
             ? STATE.performanceData.services 
             : [STATE.performanceData.services[parseInt(selectedService)]];
         
+        // Populate currency dropdown options (will be used for each row)
+        let currencyOptions = '<option value="">Select</option>';
+        if (typeof CURRENCIES !== 'undefined') {
+            CURRENCIES.forEach(curr => {
+                currencyOptions += `<option value="${curr}">${curr}</option>`;
+            });
+        }
+        
         servicesToShow.forEach((service) => {
             const actualServiceIndex = selectedService === 'all' 
                 ? STATE.performanceData.services.indexOf(service) 
@@ -2931,18 +2997,69 @@ const App = {
                 const netAdditions = day.netAdditions || 0;
                 const netAddColor = netAdditions >= 0 ? '#10b981' : '#ef4444';
                 
+                // Build currency dropdown with current value selected
+                let currencySelectHtml = `<select class="bulk-edit-currency" data-service-idx="${actualServiceIndex}" data-day-idx="${i}" style="width: 80px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">`;
+                currencySelectHtml += '<option value="">Select</option>';
+                if (typeof CURRENCIES !== 'undefined') {
+                    CURRENCIES.forEach(curr => {
+                        const selected = (day.currency || service.currency) === curr ? 'selected' : '';
+                        currencySelectHtml += `<option value="${curr}" ${selected}>${curr}</option>`;
+                    });
+                }
+                currencySelectHtml += '</select>';
+                
                 rows.push(`
                     <tr data-service-idx="${actualServiceIndex}" data-day-idx="${i}">
-                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${service.name}</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                            <select class="bulk-edit-category" data-service-idx="${actualServiceIndex}" data-day-idx="${i}" style="width: 150px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                                <option value="Content Business" ${(day.businessCategory || service.category) === 'Content Business' ? 'selected' : ''}>Content Business</option>
+                                <option value="Channel Business" ${(day.businessCategory || service.category) === 'Channel Business' ? 'selected' : ''}>Channel Business</option>
+                            </select>
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                            <input type="text" 
+                                   class="bulk-edit-account" 
+                                   data-service-idx="${actualServiceIndex}" 
+                                   data-day-idx="${i}"
+                                   value="${day.account || service.account || ''}" 
+                                   placeholder="Account"
+                                   style="width: 120px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                            <input type="text" 
+                                   class="bulk-edit-country" 
+                                   data-service-idx="${actualServiceIndex}" 
+                                   data-day-idx="${i}"
+                                   value="${day.country || service.country || ''}" 
+                                   placeholder="Country"
+                                   style="width: 120px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; font-weight: 500;">${service.name}</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                            ${currencySelectHtml}
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                            <input type="number" 
+                                   class="bulk-edit-zarrate" 
+                                   data-service-idx="${actualServiceIndex}" 
+                                   data-day-idx="${i}"
+                                   value="${day.zarRate || service.zarRate || 1.0}" 
+                                   step="0.01"
+                                   min="0.01"
+                                   style="width: 80px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
+                        </td>
                         <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; text-align: center;">${day.day}</td>
                         <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; text-align: center;">${day.date}</td>
                         <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
                             <input type="number" 
-                                   class="bulk-edit-revenue" 
+                                   class="bulk-edit-billing-lcu" 
                                    data-service-idx="${actualServiceIndex}" 
                                    data-day-idx="${i}"
-                                   value="${day.revenue}" 
+                                   value="${day.dailyBillingLCU || 0}" 
                                    style="width: 120px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600;">
+                            R ${(day.revenue / 1000).toFixed(1)}K
                         </td>
                         <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
                             <input type="number" 
@@ -2989,12 +3106,18 @@ const App = {
         
         tbody.innerHTML = rows.length > 0 
             ? rows.join('') 
-            : '<tr><td colspan="10" style="text-align: center; padding: 2rem; color: #6b7280;">No data available</td></tr>';
+            : '<tr><td colspan="16" style="text-align: center; padding: 2rem; color: #6b7280;">No data available</td></tr>';
+    },
     },
     
     saveBulkDailyData() {
         // Collect all edited values
-        const revenueInputs = document.querySelectorAll('.bulk-edit-revenue');
+        const categoryInputs = document.querySelectorAll('.bulk-edit-category');
+        const accountInputs = document.querySelectorAll('.bulk-edit-account');
+        const countryInputs = document.querySelectorAll('.bulk-edit-country');
+        const currencyInputs = document.querySelectorAll('.bulk-edit-currency');
+        const zarrateInputs = document.querySelectorAll('.bulk-edit-zarrate');
+        const billingLCUInputs = document.querySelectorAll('.bulk-edit-billing-lcu');
         const targetInputs = document.querySelectorAll('.bulk-edit-target');
         const churnedInputs = document.querySelectorAll('.bulk-edit-churned');
         const acquisitionsInputs = document.querySelectorAll('.bulk-edit-acquisitions');
@@ -3002,13 +3125,82 @@ const App = {
         
         let hasChanges = false;
         
-        revenueInputs.forEach(input => {
+        // Update business category
+        categoryInputs.forEach(input => {
             const serviceIdx = parseInt(input.dataset.serviceIdx);
             const dayIdx = parseInt(input.dataset.dayIdx);
-            const newRevenue = parseInt(input.value);
+            const newCategory = input.value;
             
-            if (!isNaN(newRevenue) && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
-                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].revenue = newRevenue;
+            if (newCategory && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
+                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].businessCategory = newCategory;
+                hasChanges = true;
+            }
+        });
+        
+        // Update account
+        accountInputs.forEach(input => {
+            const serviceIdx = parseInt(input.dataset.serviceIdx);
+            const dayIdx = parseInt(input.dataset.dayIdx);
+            const newAccount = input.value.trim();
+            
+            if (newAccount && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
+                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].account = newAccount;
+                STATE.performanceData.services[serviceIdx].account = newAccount; // Update service level too
+                hasChanges = true;
+            }
+        });
+        
+        // Update country
+        countryInputs.forEach(input => {
+            const serviceIdx = parseInt(input.dataset.serviceIdx);
+            const dayIdx = parseInt(input.dataset.dayIdx);
+            const newCountry = input.value.trim();
+            
+            if (newCountry && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
+                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].country = newCountry;
+                STATE.performanceData.services[serviceIdx].country = newCountry; // Update service level too
+                hasChanges = true;
+            }
+        });
+        
+        // Update currency
+        currencyInputs.forEach(input => {
+            const serviceIdx = parseInt(input.dataset.serviceIdx);
+            const dayIdx = parseInt(input.dataset.dayIdx);
+            const newCurrency = input.value;
+            
+            if (newCurrency && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
+                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].currency = newCurrency;
+                STATE.performanceData.services[serviceIdx].currency = newCurrency; // Update service level too
+                hasChanges = true;
+            }
+        });
+        
+        // Update ZAR rate
+        zarrateInputs.forEach(input => {
+            const serviceIdx = parseInt(input.dataset.serviceIdx);
+            const dayIdx = parseInt(input.dataset.dayIdx);
+            const newZarRate = parseFloat(input.value);
+            
+            if (!isNaN(newZarRate) && newZarRate > 0 && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
+                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].zarRate = newZarRate;
+                STATE.performanceData.services[serviceIdx].zarRate = newZarRate; // Update service level too
+                hasChanges = true;
+            }
+        });
+        
+        // Update Daily Billing (LCU) and recalculate revenue
+        billingLCUInputs.forEach(input => {
+            const serviceIdx = parseInt(input.dataset.serviceIdx);
+            const dayIdx = parseInt(input.dataset.dayIdx);
+            const newBillingLCU = parseInt(input.value);
+            
+            if (!isNaN(newBillingLCU) && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
+                const day = STATE.performanceData.services[serviceIdx].dailyData[dayIdx];
+                day.dailyBillingLCU = newBillingLCU;
+                // Recalculate revenue: Daily Revenue = Daily Billing (LCU) × ZAR Rate
+                const zarRate = day.zarRate || STATE.performanceData.services[serviceIdx].zarRate || 1.0;
+                day.revenue = Math.round(newBillingLCU * zarRate);
                 hasChanges = true;
             }
         });
@@ -3066,6 +3258,9 @@ const App = {
                 service.mtdTarget = totalTarget;
                 service.actualRunRate = Math.round(totalRevenue / service.dailyData.length);
                 service.requiredRunRate = Math.round(totalTarget / service.dailyData.length);
+                
+                // Recalculate MTD Net Additions
+                service.mtdNetAdditions = service.dailyData.reduce((sum, day) => sum + (day.netAdditions || 0), 0);
                 
                 // Recalculate subscriber base progression
                 let runningBase = service.dailyData[0]?.subscriberBase || 0;

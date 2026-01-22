@@ -725,42 +725,89 @@ app.get('*', async (c) => {
 
     <!-- Performance Service Modal -->
     <div id="performance-service-modal" class="modal" style="display: none;">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
                 <h2 id="perf-service-modal-title">Add Service</h2>
                 <button class="modal-close">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                 <form id="performance-service-form">
                     <input type="hidden" id="perf-service-id">
+                    
+                    <h3 style="margin: 0 0 1rem 0; color: #374151; font-size: 0.95rem; font-weight: 600; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem;">Service Information</h3>
+                    
                     <div class="form-group">
                         <label for="perf-service-name">Service Name *</label>
                         <input type="text" id="perf-service-name" placeholder="e.g., YoGamezPro" required>
                     </div>
+                    
                     <div class="form-group">
-                        <label for="perf-service-category">Category *</label>
+                        <label for="perf-service-category">Business Category *</label>
                         <select id="perf-service-category" required>
                             <option value="">Select a category</option>
                             <option value="Content Business">Content Business</option>
                             <option value="Channel Business">Channel Business</option>
                         </select>
                     </div>
+                    
+                    <h3 style="margin: 1.5rem 0 1rem 0; color: #374151; font-size: 0.95rem; font-weight: 600; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem;">Deployment Information</h3>
+                    
                     <div class="form-group">
-                        <label for="perf-service-mtd-revenue">MTD Revenue (R) *</label>
-                        <input type="number" id="perf-service-mtd-revenue" placeholder="1250000" min="0" step="1000" required>
+                        <label for="perf-service-account">Account *</label>
+                        <input type="text" id="perf-service-account" placeholder="e.g., Vodacom, MTN" required>
                     </div>
+                    
                     <div class="form-group">
-                        <label for="perf-service-mtd-target">MTD Target (R) *</label>
-                        <input type="number" id="perf-service-mtd-target" placeholder="1200000" min="0" step="1000" required>
+                        <label for="perf-service-country">Country *</label>
+                        <select id="perf-service-country" required style="width: 100%;">
+                            <option value="">Select a country</option>
+                            <!-- Will be populated dynamically from countries-currencies.js -->
+                        </select>
                     </div>
-                    <div class="form-group">
-                        <label for="perf-service-actual-runrate">Actual Run Rate (R/day) *</label>
-                        <input type="number" id="perf-service-actual-runrate" placeholder="48076" min="0" step="100" required>
+                    
+                    <h3 style="margin: 1.5rem 0 1rem 0; color: #374151; font-size: 0.95rem; font-weight: 600; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem;">Currency & Billing</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="perf-service-currency">Currency *</label>
+                            <select id="perf-service-currency" required>
+                                <option value="">Select currency</option>
+                                <!-- Will be populated dynamically from countries-currencies.js -->
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="perf-service-zar-rate">ZAR Rate *</label>
+                            <input type="number" id="perf-service-zar-rate" placeholder="18.5" min="0.01" step="0.01" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="perf-service-required-runrate">Required Run Rate (R/day) *</label>
-                        <input type="number" id="perf-service-required-runrate" placeholder="50000" min="0" step="100" required>
+                    
+                    <h3 style="margin: 1.5rem 0 1rem 0; color: #374151; font-size: 0.95rem; font-weight: 600; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem;">Performance Metrics</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="perf-service-mtd-revenue">MTD Revenue (ZAR) *</label>
+                            <input type="number" id="perf-service-mtd-revenue" placeholder="1250000" min="0" step="1000" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="perf-service-mtd-target">MTD Target (ZAR) *</label>
+                            <input type="number" id="perf-service-mtd-target" placeholder="1200000" min="0" step="1000" required>
+                        </div>
                     </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="perf-service-actual-runrate">Actual Run Rate (ZAR/day) *</label>
+                            <input type="number" id="perf-service-actual-runrate" placeholder="48076" min="0" step="100" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="perf-service-required-runrate">Required Run Rate (ZAR/day) *</label>
+                            <input type="number" id="perf-service-required-runrate" placeholder="50000" min="0" step="100" required>
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
                         <label for="perf-service-subscriber-base">Subscriber Base *</label>
                         <input type="number" id="perf-service-subscriber-base" placeholder="85000" min="0" step="100" required>
@@ -842,14 +889,20 @@ app.get('*', async (c) => {
 
                 <!-- Editable Data Table -->
                 <div style="overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
-                    <table class="data-table" id="bulk-edit-table" style="width: 100%; min-width: 1400px;">
+                    <table class="data-table" id="bulk-edit-table" style="width: 100%; min-width: 2200px;">
                         <thead style="background: #f9fafb;">
                             <tr>
+                                <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Business Category</th>
+                                <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Account</th>
+                                <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Country</th>
                                 <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Service</th>
+                                <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Currency</th>
+                                <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">ZAR Rate</th>
                                 <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Day</th>
                                 <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Date</th>
-                                <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Daily Revenue (R)</th>
-                                <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Daily Target (R)</th>
+                                <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Daily Billing (LCU)</th>
+                                <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Daily Revenue (ZAR)</th>
+                                <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Daily Target (ZAR)</th>
                                 <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Churned Subs</th>
                                 <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Daily Acquisitions</th>
                                 <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Net Additions</th>
@@ -871,6 +924,7 @@ app.get('*', async (c) => {
     </div>
 
     <!-- Scripts -->
+    <script src="/static/countries-currencies.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="/static/app.js"></script>
 </body>
