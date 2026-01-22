@@ -111,7 +111,80 @@ Business Tracker is a sophisticated web application designed to support the exec
 - **Mastery Course Library**: localStorage (20 pre-loaded courses)
 - **Mastery Course Activity**: localStorage (user progress tracking)
 - **Kanban Activities**: localStorage (activity board data)
-- **Performance Data**: Generated sample data (can be connected to real sources)
+- **Performance Data**: localStorage with version flag (persistent, no auto-regeneration)
+
+### Data Persistence Architecture
+
+#### 🔒 Permanent Data Guarantee
+This is a **live production system**. All data changes are **permanent and persistent**:
+
+1. **Version-Controlled Persistence**
+   - Each data save includes a `drumtree_data_version` flag in localStorage
+   - Once initialized, the system will **NEVER** automatically regenerate data
+   - Sample data only appears on the very first initialization (when no data exists and no version flag)
+
+2. **Three-Stage Initialization**
+   - **Stage 1 (First Launch)**: No data and no version flag → Generates sample data and sets version flag
+   - **Stage 2 (Subsequent Launches)**: Data exists → Loads existing data (no regeneration)
+   - **Stage 3 (Data Cleared)**: Version flag exists but no data → Initializes empty structure (no sample data)
+
+3. **What Happens on Code Updates**
+   - ✅ Your data is preserved across all functionality updates
+   - ✅ localStorage data is separate from application code
+   - ✅ Version flag prevents accidental data regeneration
+   - ✅ All edits made through the UI are permanent
+
+4. **Data Safety Mechanisms**
+   - Every save operation updates the version flag
+   - Data validation before saving
+   - Console logging for all data operations
+   - Export/import utilities for backup and restore
+
+#### 🛠️ Admin Data Management Utilities
+
+Admins can access these functions via the **browser console** (F12 → Console tab):
+
+```javascript
+// Export complete data backup to JSON file
+App.exportDataBackup()
+
+// Import data from backup file
+// First, read the file, then:
+App.importDataBackup(jsonData)
+
+// Clear all data (requires confirmation)
+// ⚠️ WARNING: This permanently deletes all data!
+App.clearAllData()
+
+// Reset data version flag (advanced use only)
+// This allows regeneration if ALL data is cleared
+App.resetDataVersion()
+```
+
+#### 📦 Data Export/Import Workflow
+
+**To Create a Backup:**
+1. Login as Admin
+2. Open browser console (F12)
+3. Run: `App.exportDataBackup()`
+4. Save the downloaded JSON file (e.g., `drumtree-backup-2026-01-22.json`)
+
+**To Restore from Backup:**
+1. Login as Admin
+2. Open browser console (F12)
+3. Load your backup JSON file into a variable:
+   ```javascript
+   const backupData = { /* paste your JSON here */ }
+   App.importDataBackup(backupData)
+   ```
+4. System will reload with restored data
+
+#### ⚠️ Important Notes
+
+- **localStorage is browser-specific**: Data is stored per browser/device. Use export/import to move data between browsers.
+- **Browser cache clearing**: If you clear browser cache/localStorage, you must restore from backup.
+- **Production safeguard**: Once the system is initialized with real data, it will never auto-regenerate.
+- **Recommended practice**: Export backups regularly, especially before major updates.
 
 ## 📊 Data Models
 

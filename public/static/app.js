@@ -1907,8 +1907,20 @@ const App = {
         // Check if data exists in localStorage first
         this.loadPerformanceData();
         
-        // If no stored data, generate sample data with multi-currency structure
-        if (!STATE.performanceData || !STATE.performanceData.services) {
+        // Check if system has been initialized (data version flag)
+        const dataVersion = localStorage.getItem('drumtree_data_version');
+        
+        // If data exists but no version flag, set the version flag (backward compatibility)
+        if (STATE.performanceData && STATE.performanceData.services && STATE.performanceData.services.length > 0 && !dataVersion) {
+            localStorage.setItem('drumtree_data_version', '1.0');
+            console.log('Set data version flag for existing data');
+            return; // Don't regenerate
+        }
+        
+        // If no stored data AND system has never been initialized, generate initial sample data
+        // Once initialized, this will NEVER regenerate data automatically
+        if ((!STATE.performanceData || !STATE.performanceData.services || STATE.performanceData.services.length === 0) && !dataVersion) {
+            console.log('Initializing system with sample data (first time only)...');
             // Generate sample data for different deployments
             const yogamezZWDaily = this.generateDailyData('YoGamezPro', 'Vodacom', 'ZIMBABWE', 'USD', 18.5, 26, 85000);
             const mobiZADaily = this.generateDailyData('MobiStream', 'MTN', 'SOUTH AFRICA', 'ZAR', 1.0, 26, 69000);
@@ -1971,6 +1983,25 @@ const App = {
             };
             // Save the initial data
             this.savePerformanceData();
+            console.log('Sample data initialized and saved. System is now persistent.');
+        } else if (dataVersion && (!STATE.performanceData || !STATE.performanceData.services || STATE.performanceData.services.length === 0)) {
+            // Data version exists but data is missing - this means data was cleared
+            // Initialize with empty structure instead of sample data
+            console.log('Data version exists but data is missing. Initializing empty structure...');
+            STATE.performanceData = {
+                services: [],
+                filters: {
+                    category: 'All',
+                    account: 'All',
+                    country: 'All',
+                    service: 'All',
+                    serviceVersion: 'All',
+                    serviceSKU: 'All',
+                    month: '2026-01'
+                }
+            };
+            this.savePerformanceData();
+            console.log('Empty data structure initialized. Add services using the Admin interface.');
         }
     },
     
@@ -2782,6 +2813,9 @@ const App = {
     
     savePerformanceData() {
         localStorage.setItem('performanceData', JSON.stringify(STATE.performanceData));
+        // Set data version flag to indicate system has been initialized
+        // This prevents automatic regeneration of sample data
+        localStorage.setItem('drumtree_data_version', '1.0');
         console.log('Saved performance data to localStorage');
     },
     
@@ -2790,6 +2824,69 @@ const App = {
         if (stored) {
             STATE.performanceData = JSON.parse(stored);
             console.log('Loaded performance data from localStorage');
+        }
+    },
+    
+    // Admin utility functions for data management (accessible via browser console)
+    resetDataVersion() {
+        if (STATE.currentUser.type !== 'Admin') {
+            console.error('Only Admins can reset data version');
+            return;
+        }
+        localStorage.removeItem('drumtree_data_version');
+        console.log('Data version flag removed. System will regenerate sample data on next load IF no data exists.');
+        console.log('IMPORTANT: This will NOT regenerate if you already have data. To fully reset, use clearAllData()');
+    },
+    
+    clearAllData() {
+        if (STATE.currentUser.type !== 'Admin') {
+            console.error('Only Admins can clear all data');
+            return;
+        }
+        if (confirm('⚠️ WARNING: This will permanently delete ALL performance data. Are you absolutely sure?')) {
+            localStorage.removeItem('performanceData');
+            localStorage.removeItem('drumtree_data_version');
+            console.log('All data cleared. Page will reload...');
+            window.location.reload();
+        }
+    },
+    
+    exportDataBackup() {
+        const backup = {
+            performanceData: STATE.performanceData,
+            dataVersion: localStorage.getItem('drumtree_data_version'),
+            exportDate: new Date().toISOString()
+        };
+        const dataStr = JSON.stringify(backup, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `drumtree-backup-${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        console.log('Data backup exported successfully');
+    },
+    
+    importDataBackup(backupData) {
+        if (STATE.currentUser.type !== 'Admin') {
+            console.error('Only Admins can import data');
+            return;
+        }
+        try {
+            const backup = typeof backupData === 'string' ? JSON.parse(backupData) : backupData;
+            if (backup.performanceData) {
+                STATE.performanceData = backup.performanceData;
+                this.savePerformanceData();
+                if (backup.dataVersion) {
+                    localStorage.setItem('drumtree_data_version', backup.dataVersion);
+                }
+                console.log('Data imported successfully. Page will reload...');
+                window.location.reload();
+            } else {
+                console.error('Invalid backup data format');
+            }
+        } catch (error) {
+            console.error('Error importing data:', error);
         }
     },
     
