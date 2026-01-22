@@ -1724,7 +1724,7 @@ const App = {
                 </div>
 
                 <!-- KPI Cards -->
-                <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 2rem;">
                     <div class="kpi-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         <div style="color: #6b7280; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.5rem;">MTD REVENUE</div>
                         <div id="kpi-mtd-revenue" style="font-size: 1.75rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">R 2.1M</div>
@@ -1767,7 +1767,7 @@ const App = {
                     <div style="background: white; padding: 1rem 1.5rem; border-radius: 8px 8px 0 0; border-bottom: 1px solid #e5e7eb;">
                         <h2 style="font-size: 1.25rem; font-weight: 700; color: #111827; margin: 0;">Performance Trends</h2>
                     </div>
-                    <div class="charts-grid" style="background: white; padding: 1.5rem; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+                    <div class="charts-grid" style="background: white; padding: 1.5rem; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
                         <div class="chart-container">
                             <h3 style="font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 1rem;">MTD Revenue vs Target</h3>
                             <canvas id="revenue-chart" style="max-height: 300px;"></canvas>
