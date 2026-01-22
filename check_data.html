@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head><title>Data Check</title></head>
+<body>
+<h1>LocalStorage Data Check</h1>
+<pre id="output"></pre>
+<script>
+const data = localStorage.getItem('performanceData');
+const version = localStorage.getItem('drumtree_data_version');
+document.getElementById('output').textContent = 
+  'Version: ' + version + '\n\n' +
+  'Data exists: ' + (data ? 'YES' : 'NO') + '\n' +
+  'Data size: ' + (data ? data.length : 0) + ' bytes\n\n' +
+  'Data preview:\n' + (data ? JSON.stringify(JSON.parse(data), null, 2).substring(0, 1000) : 'NONE');
+</script>
+</body>
+</html>

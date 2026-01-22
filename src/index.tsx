@@ -1,9 +1,15 @@
 import { Hono } from 'hono'
 import { serveStatic } from 'hono/cloudflare-workers'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import dbApi from './db-api'
 
-const app = new Hono()
+type Bindings = {
+  DB: D1Database
+}
+
+const app = new Hono<{ Bindings: Bindings }>()
+
+// Mount database API
+app.route('/api', dbApi)
 
 // Serve static files
 app.use('/static/*', serveStatic({ root: './public' }))
