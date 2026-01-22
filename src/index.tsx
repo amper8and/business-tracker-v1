@@ -842,7 +842,7 @@ app.get('*', async (c) => {
 
                 <!-- Editable Data Table -->
                 <div style="overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
-                    <table class="data-table" id="bulk-edit-table" style="width: 100%; min-width: 800px;">
+                    <table class="data-table" id="bulk-edit-table" style="width: 100%; min-width: 1400px;">
                         <thead style="background: #f9fafb;">
                             <tr>
                                 <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Service</th>
@@ -850,6 +850,10 @@ app.get('*', async (c) => {
                                 <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Date</th>
                                 <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Daily Revenue (R)</th>
                                 <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Daily Target (R)</th>
+                                <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Churned Subs</th>
+                                <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Daily Acquisitions</th>
+                                <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Net Additions</th>
+                                <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Subscriber Base</th>
                                 <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Variance</th>
                             </tr>
                         </thead>

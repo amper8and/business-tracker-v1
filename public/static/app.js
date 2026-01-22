@@ -2729,11 +2729,14 @@ const App = {
                 const variancePercent = day.target > 0 ? ((variance / day.target) * 100).toFixed(1) : 0;
                 const varianceColor = variance >= 0 ? '#10b981' : '#ef4444';
                 
+                const netAdditions = day.netAdditions || 0;
+                const netAddColor = netAdditions >= 0 ? '#10b981' : '#ef4444';
+                
                 rows.push(`
                     <tr data-service-idx="${actualServiceIndex}" data-day-idx="${i}">
                         <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${service.name}</td>
-                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${day.day}</td>
-                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${day.date}</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; text-align: center;">${day.day}</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; text-align: center;">${day.date}</td>
                         <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
                             <input type="number" 
                                    class="bulk-edit-revenue" 
@@ -2750,7 +2753,34 @@ const App = {
                                    value="${day.target}" 
                                    style="width: 120px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
                         </td>
-                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; color: ${varianceColor}; font-weight: 600;">
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                            <input type="number" 
+                                   class="bulk-edit-churned" 
+                                   data-service-idx="${actualServiceIndex}" 
+                                   data-day-idx="${i}"
+                                   value="${day.churnedSubs || 0}" 
+                                   style="width: 100px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                            <input type="number" 
+                                   class="bulk-edit-acquisitions" 
+                                   data-service-idx="${actualServiceIndex}" 
+                                   data-day-idx="${i}"
+                                   value="${day.dailyAcquisitions || 0}" 
+                                   style="width: 100px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                            <input type="number" 
+                                   class="bulk-edit-netadds" 
+                                   data-service-idx="${actualServiceIndex}" 
+                                   data-day-idx="${i}"
+                                   value="${netAdditions}" 
+                                   style="width: 100px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600;">
+                            ${(day.subscriberBase || 0).toLocaleString()}
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; color: ${varianceColor}; font-weight: 600; text-align: right;">
                             ${variance >= 0 ? '+' : ''}R ${(variance / 1000).toFixed(0)}K (${variancePercent}%)
                         </td>
                     </tr>
@@ -2760,13 +2790,16 @@ const App = {
         
         tbody.innerHTML = rows.length > 0 
             ? rows.join('') 
-            : '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">No data available</td></tr>';
+            : '<tr><td colspan="10" style="text-align: center; padding: 2rem; color: #6b7280;">No data available</td></tr>';
     },
     
     saveBulkDailyData() {
         // Collect all edited values
         const revenueInputs = document.querySelectorAll('.bulk-edit-revenue');
         const targetInputs = document.querySelectorAll('.bulk-edit-target');
+        const churnedInputs = document.querySelectorAll('.bulk-edit-churned');
+        const acquisitionsInputs = document.querySelectorAll('.bulk-edit-acquisitions');
+        const netAddsInputs = document.querySelectorAll('.bulk-edit-netadds');
         
         let hasChanges = false;
         
@@ -2792,8 +2825,41 @@ const App = {
             }
         });
         
+        churnedInputs.forEach(input => {
+            const serviceIdx = parseInt(input.dataset.serviceIdx);
+            const dayIdx = parseInt(input.dataset.dayIdx);
+            const newChurned = parseInt(input.value);
+            
+            if (!isNaN(newChurned) && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
+                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].churnedSubs = newChurned;
+                hasChanges = true;
+            }
+        });
+        
+        acquisitionsInputs.forEach(input => {
+            const serviceIdx = parseInt(input.dataset.serviceIdx);
+            const dayIdx = parseInt(input.dataset.dayIdx);
+            const newAcquisitions = parseInt(input.value);
+            
+            if (!isNaN(newAcquisitions) && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
+                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].dailyAcquisitions = newAcquisitions;
+                hasChanges = true;
+            }
+        });
+        
+        netAddsInputs.forEach(input => {
+            const serviceIdx = parseInt(input.dataset.serviceIdx);
+            const dayIdx = parseInt(input.dataset.dayIdx);
+            const newNetAdds = parseInt(input.value);
+            
+            if (!isNaN(newNetAdds) && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
+                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].netAdditions = newNetAdds;
+                hasChanges = true;
+            }
+        });
+        
         if (hasChanges) {
-            // Recalculate MTD values for all services
+            // Recalculate MTD values and subscriber base for all services
             STATE.performanceData.services.forEach(service => {
                 const totalRevenue = service.dailyData.reduce((sum, day) => sum + day.revenue, 0);
                 const totalTarget = service.dailyData.reduce((sum, day) => sum + day.target, 0);
@@ -2801,6 +2867,24 @@ const App = {
                 service.mtdTarget = totalTarget;
                 service.actualRunRate = Math.round(totalRevenue / service.dailyData.length);
                 service.requiredRunRate = Math.round(totalTarget / service.dailyData.length);
+                
+                // Recalculate subscriber base progression
+                let runningBase = service.dailyData[0]?.subscriberBase || 0;
+                service.dailyData.forEach((day, index) => {
+                    if (index === 0) {
+                        // First day - keep initial base or recalculate from net additions
+                        runningBase = runningBase - (day.netAdditions || 0);
+                    } else {
+                        // Calculate from previous day
+                        runningBase = service.dailyData[index - 1].subscriberBase;
+                    }
+                    day.subscriberBase = runningBase + (day.netAdditions || 0);
+                    runningBase = day.subscriberBase;
+                });
+                
+                // Update service-level subscriber base and MTD net additions
+                service.subscriberBase = service.dailyData[service.dailyData.length - 1]?.subscriberBase || 0;
+                service.mtdNetAdditions = service.dailyData.reduce((sum, day) => sum + (day.netAdditions || 0), 0);
             });
             
             // Save to localStorage
