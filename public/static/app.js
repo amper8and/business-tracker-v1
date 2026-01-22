@@ -3108,7 +3108,6 @@ const App = {
             ? rows.join('') 
             : '<tr><td colspan="16" style="text-align: center; padding: 2rem; color: #6b7280;">No data available</td></tr>';
     },
-    },
     
     saveBulkDailyData() {
         // Collect all edited values
