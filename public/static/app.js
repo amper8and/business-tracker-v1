@@ -446,47 +446,9 @@ const App = {
                 }));
                 console.log('✅ Loaded', STATE.coursesList.length, 'courses from D1 database');
             } else {
-                // Initialize with default courses from Excel
-                console.log('ℹ️ No courses in D1 database, initializing default courses...');
-                const defaultCourses = [
-                    {title:"AI Ethics: Ethical Intelligence for 2026",category:"Compliance",url:"https://www.udemy.com/course/chatgpt-ai-ethics-ethical-intelligence/",duration:"4"},
-                    {title:"Corporate Governance: Principles and Practice",category:"Compliance",url:"https://www.udemy.com/course/corporate-governance-k/",duration:"4"},
-                    {title:"Employment Laws in South Africa",category:"Compliance",url:"https://www.udemy.com/course/human-resources-labour-law-employment-laws-in-south-africa/",duration:"4"},
-                    {title:"Professional Ethics & Workplace Integrity Masterclass",category:"Compliance",url:"https://www.udemy.com/course/professional-ethics-mastery/",duration:"4"},
-                    {title:"The Complete Cyber Security Awareness Training for Employees",category:"Compliance",url:"https://www.udemy.com/course/cybersecurity-for-corporate-employees/",duration:"4"},
-                    {title:"Business Fundamentals: Marketing Strategy",category:"Function",url:"https://www.udemy.com/course/business-fundamentals-marketing-strategy/",duration:"4"},
-                    {title:"Canva Master Course 2026",category:"Function",url:"https://www.udemy.com/course/canva-master-course-graphic-design-for-beginners/",duration:"4"},
-                    {title:"Financial Reporeting & Analysis",category:"Function",url:"https://www.udemy.com/course/financial-reporting-analysis/",duration:"4"},
-                    {title:"Management Consulting Presentation Essentials Training 2026",category:"Function",url:"https://www.udemy.com/course/management-consulting-presentation-mckinsey/",duration:"4"},
-                    {title:"The Complete Digital Marketing Guide",category:"Function",url:"https://www.udemy.com/course/digital-marketing-guide/",duration:"4"},
-                    {title:"Business Model Innovation For Business Growth",category:"Leadership",url:"https://www.udemy.com/course/part-1-business-innovation-for-brand-growth/",duration:"4"},
-                    {title:"Communication, Leadership & Management",category:"Leadership",url:"https://www.udemy.com/course/high-impact-communication-skills/",duration:"4"},
-                    {title:"Leadership: Growth Mindset for Leadership and Organizations",category:"Leadership",url:"https://www.udemy.com/course/growth-mindset-for-leadership-and-organizations/",duration:"4"},
-                    {title:"Leadership: The Emotionally Intelligent Leader",category:"Leadership",url:"https://www.udemy.com/course/the-emotionally-intelligent-leader/",duration:"4"},
-                    {title:"MBA in a Box: Business Lessons from a CEO",category:"Leadership",url:"https://www.udemy.com/course/mba-in-a-box-business-lessons-from-a-ceo/",duration:"4"},
-                    {title:"Agentic AI for Beginners",category:"Technology",url:"https://www.udemy.com/course/agentic-ai-for-beginners/",duration:"4"},
-                    {title:"Claude Code Beginner to Pro",category:"Technology",url:"https://www.udemy.com/course/learn-claude-code/",duration:"4"},
-                    {title:"The Complete AI Coding Course (2025)",category:"Technology",url:"https://www.udemy.com/course/the-complete-ai-coding-course-2025-cursor-ai-v0-vercel/",duration:"4"},
-                    {title:"The Complete AI Guide",category:"Technology",url:"https://www.udemy.com/course/complete-ai-guide/",duration:"4"},
-                    {title:"Udemy: 100 Days of Code",category:"Technology",url:"https://www.udemy.com/course/100-days-of-code/",duration:"4"}
-                ];
-                
+                // No courses in database - show empty
+                console.log('ℹ️ No courses in D1 database - showing empty');
                 STATE.coursesList = [];
-                for (const course of defaultCourses) {
-                    const created = await DBService.createCourse(course);
-                    STATE.coursesList.push({
-                        id: created.id,
-                        name: created.title,
-                        category: created.category,
-                        url: created.url,
-                        hours: parseInt(created.duration),
-                        provider: created.provider,
-                        difficulty: created.difficulty,
-                        description: created.description,
-                        status: created.status || 'Not Started'
-                    });
-                }
-                console.log('✅ Initialized', STATE.coursesList.length, 'courses in D1 database');
             }
         } catch (error) {
             console.error('❌ Failed to load courses from D1:', error);
@@ -529,25 +491,9 @@ const App = {
                 }));
                 console.log('✅ Loaded', STATE.kanbanCards.length, 'kanban cards from D1 database');
             } else {
-                // Initialize with sample data
-                console.log('ℹ️ No kanban cards in D1 database, initializing sample data...');
-                STATE.kanbanCards = this.generateSampleKanbanData();
-                
-                // Save to D1
-                for (const card of STATE.kanbanCards) {
-                    await DBService.createKanban({
-                        id: card.id,
-                        title: card.name,
-                        description: card.comments,
-                        category: card.category,
-                        priority: card.status.charAt(0).toUpperCase() + card.status.slice(1),
-                        status: card.lane,
-                        assignedTo: card.owner,
-                        dueDate: card.targetDate,
-                        tags: []
-                    });
-                }
-                console.log('✅ Initialized', STATE.kanbanCards.length, 'kanban cards in D1 database');
+                // No sample data - show empty
+                console.log('ℹ️ No kanban cards in D1 database - showing empty');
+                STATE.kanbanCards = [];
             }
         } catch (error) {
             console.error('❌ Failed to load kanban cards from D1:', error);
@@ -1750,8 +1696,8 @@ const App = {
             return;
         }
         
-        // Load data from D1 database
-        await this.generatePerformanceData();
+        // Load data from D1 database (no sample data generation)
+        await this.loadPerformanceData();
         
         container.innerHTML = `
             <div class="performance-dashboard">
