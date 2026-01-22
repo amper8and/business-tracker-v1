@@ -3135,8 +3135,12 @@ const App = {
         document.getElementById('daily-service-name').value = service.name;
         document.getElementById('daily-day').value = day.day;
         document.getElementById('daily-date').value = day.date;
-        document.getElementById('daily-revenue').value = day.revenue;
-        document.getElementById('daily-target').value = day.target;
+        document.getElementById('daily-billing-lcu').value = day.dailyBillingLCU || 0;
+        document.getElementById('daily-target').value = day.target || 0;
+        document.getElementById('daily-churned-subs').value = day.churnedSubs || 0;
+        document.getElementById('daily-acquisitions').value = day.dailyAcquisitions || 0;
+        document.getElementById('daily-net-additions').value = day.netAdditions || 0;
+        document.getElementById('daily-subscriber-base').value = day.subscriberBase || 0;
         
         Utils.show('daily-data-modal');
     },
@@ -3144,10 +3148,15 @@ const App = {
     saveDailyData() {
         const serviceIndex = parseInt(document.getElementById('daily-service-index').value);
         const dayIndex = parseInt(document.getElementById('daily-day-index').value);
-        const revenue = parseInt(document.getElementById('daily-revenue').value);
+        const dailyBillingLCU = parseInt(document.getElementById('daily-billing-lcu').value);
         const target = parseInt(document.getElementById('daily-target').value);
+        const churnedSubs = parseInt(document.getElementById('daily-churned-subs').value);
+        const dailyAcquisitions = parseInt(document.getElementById('daily-acquisitions').value);
+        const netAdditions = parseInt(document.getElementById('daily-net-additions').value);
+        const subscriberBase = parseInt(document.getElementById('daily-subscriber-base').value);
         
-        if (isNaN(serviceIndex) || isNaN(dayIndex) || isNaN(revenue) || isNaN(target)) {
+        if (isNaN(serviceIndex) || isNaN(dayIndex) || isNaN(dailyBillingLCU) || isNaN(target) || 
+            isNaN(churnedSubs) || isNaN(dailyAcquisitions) || isNaN(netAdditions) || isNaN(subscriberBase)) {
             alert('Please fill in all required fields');
             return;
         }
@@ -3155,21 +3164,48 @@ const App = {
         // Update the daily data
         const service = STATE.performanceData.services[serviceIndex];
         if (service && service.dailyData[dayIndex]) {
-            service.dailyData[dayIndex].revenue = revenue;
-            service.dailyData[dayIndex].target = target;
+            const day = service.dailyData[dayIndex];
+            const zarRate = service.zarRate || 1.0;
+            
+            // Update all fields
+            day.dailyBillingLCU = dailyBillingLCU;
+            day.revenue = Math.round(dailyBillingLCU * zarRate);
+            day.target = target;
+            day.churnedSubs = churnedSubs;
+            day.dailyAcquisitions = dailyAcquisitions;
+            day.netAdditions = netAdditions;
+            day.subscriberBase = subscriberBase;
+            
+            // Ripple effect: Update subscriber base for all subsequent days
+            // Subscriber Base for day N = Subscriber Base for day N-1 + Net Additions for day N
+            for (let i = dayIndex + 1; i < service.dailyData.length; i++) {
+                const prevDay = service.dailyData[i - 1];
+                const currentDay = service.dailyData[i];
+                
+                // Calculate new subscriber base based on previous day's base + current day's net additions
+                currentDay.subscriberBase = prevDay.subscriberBase + currentDay.netAdditions;
+            }
             
             // Recalculate MTD values
-            const totalRevenue = service.dailyData.reduce((sum, day) => sum + day.revenue, 0);
-            const totalTarget = service.dailyData.reduce((sum, day) => sum + day.target, 0);
+            const totalRevenue = service.dailyData.reduce((sum, day) => sum + (day.revenue || 0), 0);
+            const totalTarget = service.dailyData.reduce((sum, day) => sum + (day.target || 0), 0);
+            const totalNetAdditions = service.dailyData.reduce((sum, day) => sum + (day.netAdditions || 0), 0);
+            
             service.mtdRevenue = totalRevenue;
             service.mtdTarget = totalTarget;
+            service.mtdNetAdditions = totalNetAdditions;
             service.actualRunRate = Math.round(totalRevenue / service.dailyData.length);
-            service.requiredRunRate = Math.round(totalTarget / service.dailyData.length);
+            // Note: requiredRunRate is now maintained from Add/Edit Service modal, not recalculated here
+            
+            // Update service-level subscriber base to last day's value
+            const lastDay = service.dailyData[service.dailyData.length - 1];
+            service.subscriberBase = lastDay.subscriberBase;
             
             // Save to localStorage
             this.savePerformanceData();
             
-            console.log('Updated daily data for', service.name, 'day', service.dailyData[dayIndex].day);
+            console.log('Updated daily data for', service.name, 'day', day.day);
+            console.log('Ripple effect: Updated subscriber base for', service.dailyData.length - dayIndex - 1, 'subsequent days');
             
             // Close modal and refresh dashboard
             Utils.hide('daily-data-modal');

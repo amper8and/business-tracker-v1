@@ -833,12 +833,28 @@ app.get('*', async (c) => {
                         <input type="date" id="daily-date" disabled style="background: #f3f4f6; cursor: not-allowed;">
                     </div>
                     <div class="form-group">
-                        <label for="daily-revenue">Daily Revenue (R) *</label>
-                        <input type="number" id="daily-revenue" placeholder="45000" min="0" step="100" required>
+                        <label for="daily-billing-lcu">Daily Billing (LCU) *</label>
+                        <input type="number" id="daily-billing-lcu" placeholder="50000" min="0" step="100" required>
                     </div>
                     <div class="form-group">
                         <label for="daily-target">Daily Target (R) *</label>
                         <input type="number" id="daily-target" placeholder="46000" min="0" step="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="daily-churned-subs">Churned Subs *</label>
+                        <input type="number" id="daily-churned-subs" placeholder="1700" min="0" step="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="daily-acquisitions">Daily Acquisitions *</label>
+                        <input type="number" id="daily-acquisitions" placeholder="1785" min="0" step="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="daily-net-additions">Net Additions *</label>
+                        <input type="number" id="daily-net-additions" placeholder="85" step="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="daily-subscriber-base">Subscriber Base *</label>
+                        <input type="number" id="daily-subscriber-base" placeholder="85000" min="0" step="1" required>
                     </div>
                 </form>
             </div>
