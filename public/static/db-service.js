@@ -178,5 +178,281 @@ const DBService = {
             netAdditions: dailyData.netAdditions || 0,
             subscriberBase: dailyData.subscriberBase || 0
         };
+    },
+    
+    // ============================================================================
+    // USERS API
+    // ============================================================================
+    async getAllUsers() {
+        try {
+            const response = await fetch(`${this.baseUrl}/users`);
+            const result = await response.json();
+            if (result.success) {
+                return result.data;
+            }
+            throw new Error(result.error || 'Failed to fetch users');
+        } catch (error) {
+            console.error('getAllUsers error:', error);
+            return [];
+        }
+    },
+    
+    async createUser(userData) {
+        try {
+            const response = await fetch(`${this.baseUrl}/users`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(userData)
+            });
+            const result = await response.json();
+            if (result.success) {
+                return result.data;
+            }
+            throw new Error(result.error || 'Failed to create user');
+        } catch (error) {
+            console.error('createUser error:', error);
+            throw error;
+        }
+    },
+    
+    async updateUser(id, userData) {
+        try {
+            const response = await fetch(`${this.baseUrl}/users/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(userData)
+            });
+            const result = await response.json();
+            if (result.success) {
+                return result.data;
+            }
+            throw new Error(result.error || 'Failed to update user');
+        } catch (error) {
+            console.error('updateUser error:', error);
+            throw error;
+        }
+    },
+    
+    async deleteUser(id) {
+        try {
+            const response = await fetch(`${this.baseUrl}/users/${id}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+            if (result.success) {
+                return true;
+            }
+            throw new Error(result.error || 'Failed to delete user');
+        } catch (error) {
+            console.error('deleteUser error:', error);
+            throw error;
+        }
+    },
+    
+    // ============================================================================
+    // MASTERY API
+    // ============================================================================
+    async getAllMastery() {
+        try {
+            const response = await fetch(`${this.baseUrl}/mastery`);
+            const result = await response.json();
+            if (result.success) {
+                return result.data;
+            }
+            throw new Error(result.error || 'Failed to fetch mastery data');
+        } catch (error) {
+            console.error('getAllMastery error:', error);
+            return [];
+        }
+    },
+    
+    async createMastery(masteryData) {
+        try {
+            const response = await fetch(`${this.baseUrl}/mastery`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(masteryData)
+            });
+            const result = await response.json();
+            if (result.success) {
+                return result.data;
+            }
+            throw new Error(result.error || 'Failed to create mastery item');
+        } catch (error) {
+            console.error('createMastery error:', error);
+            throw error;
+        }
+    },
+    
+    async updateMastery(id, masteryData) {
+        try {
+            const response = await fetch(`${this.baseUrl}/mastery/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(masteryData)
+            });
+            const result = await response.json();
+            if (result.success) {
+                return result.data;
+            }
+            throw new Error(result.error || 'Failed to update mastery item');
+        } catch (error) {
+            console.error('updateMastery error:', error);
+            throw error;
+        }
+    },
+    
+    async deleteMastery(id) {
+        try {
+            const response = await fetch(`${this.baseUrl}/mastery/${id}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+            if (result.success) {
+                return true;
+            }
+            throw new Error(result.error || 'Failed to delete mastery item');
+        } catch (error) {
+            console.error('deleteMastery error:', error);
+            throw error;
+        }
+    },
+    
+    // ============================================================================
+    // COURSES API
+    // ============================================================================
+    async getAllCourses() {
+        try {
+            const response = await fetch(`${this.baseUrl}/courses`);
+            const result = await response.json();
+            if (result.success) {
+                return result.data;
+            }
+            throw new Error(result.error || 'Failed to fetch courses');
+        } catch (error) {
+            console.error('getAllCourses error:', error);
+            return [];
+        }
+    },
+    
+    async createCourse(courseData) {
+        try {
+            const response = await fetch(`${this.baseUrl}/courses`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(courseData)
+            });
+            const result = await response.json();
+            if (result.success) {
+                return result.data;
+            }
+            throw new Error(result.error || 'Failed to create course');
+        } catch (error) {
+            console.error('createCourse error:', error);
+            throw error;
+        }
+    },
+    
+    async updateCourse(id, courseData) {
+        try {
+            const response = await fetch(`${this.baseUrl}/courses/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(courseData)
+            });
+            const result = await response.json();
+            if (result.success) {
+                return result.data;
+            }
+            throw new Error(result.error || 'Failed to update course');
+        } catch (error) {
+            console.error('updateCourse error:', error);
+            throw error;
+        }
+    },
+    
+    async deleteCourse(id) {
+        try {
+            const response = await fetch(`${this.baseUrl}/courses/${id}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+            if (result.success) {
+                return true;
+            }
+            throw new Error(result.error || 'Failed to delete course');
+        } catch (error) {
+            console.error('deleteCourse error:', error);
+            throw error;
+        }
+    },
+    
+    // ============================================================================
+    // KANBAN API
+    // ============================================================================
+    async getAllKanban() {
+        try {
+            const response = await fetch(`${this.baseUrl}/kanban`);
+            const result = await response.json();
+            if (result.success) {
+                return result.data;
+            }
+            throw new Error(result.error || 'Failed to fetch kanban cards');
+        } catch (error) {
+            console.error('getAllKanban error:', error);
+            return [];
+        }
+    },
+    
+    async createKanban(kanbanData) {
+        try {
+            const response = await fetch(`${this.baseUrl}/kanban`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(kanbanData)
+            });
+            const result = await response.json();
+            if (result.success) {
+                return result.data;
+            }
+            throw new Error(result.error || 'Failed to create kanban card');
+        } catch (error) {
+            console.error('createKanban error:', error);
+            throw error;
+        }
+    },
+    
+    async updateKanban(cardId, kanbanData) {
+        try {
+            const response = await fetch(`${this.baseUrl}/kanban/${cardId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(kanbanData)
+            });
+            const result = await response.json();
+            if (result.success) {
+                return result.data;
+            }
+            throw new Error(result.error || 'Failed to update kanban card');
+        } catch (error) {
+            console.error('updateKanban error:', error);
+            throw error;
+        }
+    },
+    
+    async deleteKanban(cardId) {
+        try {
+            const response = await fetch(`${this.baseUrl}/kanban/${cardId}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+            if (result.success) {
+                return true;
+            }
+            throw new Error(result.error || 'Failed to delete kanban card');
+        } catch (error) {
+            console.error('deleteKanban error:', error);
+            throw error;
+        }
     }
 };

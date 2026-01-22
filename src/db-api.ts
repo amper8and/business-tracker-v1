@@ -339,4 +339,318 @@ api.post('/migrate', async (c) => {
   }
 })
 
+// ============================================================================
+// USERS API
+// ============================================================================
+
+// GET all users
+api.get('/users', async (c) => {
+  try {
+    const { results } = await c.env.DB.prepare(`
+      SELECT id, username, type, created_at, updated_at FROM users ORDER BY username
+    `).all()
+    
+    return c.json({ success: true, data: results })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// POST create user
+api.post('/users', async (c) => {
+  try {
+    const body = await c.req.json()
+    
+    const result = await c.env.DB.prepare(`
+      INSERT INTO users (username, password, type) VALUES (?, ?, ?)
+    `).bind(body.username, body.password, body.type).run()
+    
+    return c.json({ success: true, data: { id: result.meta.last_row_id, ...body } })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// PUT update user
+api.put('/users/:id', async (c) => {
+  try {
+    const id = c.req.param('id')
+    const body = await c.req.json()
+    
+    await c.env.DB.prepare(`
+      UPDATE users SET password = ?, type = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+    `).bind(body.password, body.type, id).run()
+    
+    return c.json({ success: true, data: { id, ...body } })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// DELETE user
+api.delete('/users/:id', async (c) => {
+  try {
+    const id = c.req.param('id')
+    await c.env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run()
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// ============================================================================
+// MASTERY API
+// ============================================================================
+
+// GET all mastery data
+api.get('/mastery', async (c) => {
+  try {
+    const { results } = await c.env.DB.prepare(`
+      SELECT * FROM mastery_data ORDER BY category, skill_name
+    `).all()
+    
+    return c.json({ success: true, data: results })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// POST create mastery item
+api.post('/mastery', async (c) => {
+  try {
+    const body = await c.req.json()
+    
+    const result = await c.env.DB.prepare(`
+      INSERT INTO mastery_data (skill_name, category, current_level, target_level, progress_percentage, last_practice_date, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      body.skillName,
+      body.category,
+      body.currentLevel || 0,
+      body.targetLevel || 5,
+      body.progressPercentage || 0,
+      body.lastPracticeDate || null,
+      body.notes || null
+    ).run()
+    
+    return c.json({ success: true, data: { id: result.meta.last_row_id, ...body } })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// PUT update mastery item
+api.put('/mastery/:id', async (c) => {
+  try {
+    const id = c.req.param('id')
+    const body = await c.req.json()
+    
+    await c.env.DB.prepare(`
+      UPDATE mastery_data SET
+        skill_name = ?, category = ?, current_level = ?, target_level = ?,
+        progress_percentage = ?, last_practice_date = ?, notes = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(
+      body.skillName,
+      body.category,
+      body.currentLevel,
+      body.targetLevel,
+      body.progressPercentage,
+      body.lastPracticeDate,
+      body.notes,
+      id
+    ).run()
+    
+    return c.json({ success: true, data: { id, ...body } })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// DELETE mastery item
+api.delete('/mastery/:id', async (c) => {
+  try {
+    const id = c.req.param('id')
+    await c.env.DB.prepare(`DELETE FROM mastery_data WHERE id = ?`).bind(id).run()
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// ============================================================================
+// COURSES API
+// ============================================================================
+
+// GET all courses
+api.get('/courses', async (c) => {
+  try {
+    const { results } = await c.env.DB.prepare(`
+      SELECT * FROM courses ORDER BY category, title
+    `).all()
+    
+    return c.json({ success: true, data: results })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// POST create course
+api.post('/courses', async (c) => {
+  try {
+    const body = await c.req.json()
+    
+    const result = await c.env.DB.prepare(`
+      INSERT INTO courses (title, provider, category, difficulty, duration, url, description, tags, status, completion_date, rating, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      body.title,
+      body.provider || null,
+      body.category || null,
+      body.difficulty || null,
+      body.duration || null,
+      body.url || null,
+      body.description || null,
+      body.tags ? JSON.stringify(body.tags) : null,
+      body.status || 'Not Started',
+      body.completionDate || null,
+      body.rating || null,
+      body.notes || null
+    ).run()
+    
+    return c.json({ success: true, data: { id: result.meta.last_row_id, ...body } })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// PUT update course
+api.put('/courses/:id', async (c) => {
+  try {
+    const id = c.req.param('id')
+    const body = await c.req.json()
+    
+    await c.env.DB.prepare(`
+      UPDATE courses SET
+        title = ?, provider = ?, category = ?, difficulty = ?, duration = ?,
+        url = ?, description = ?, tags = ?, status = ?, completion_date = ?,
+        rating = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(
+      body.title,
+      body.provider,
+      body.category,
+      body.difficulty,
+      body.duration,
+      body.url,
+      body.description,
+      body.tags ? JSON.stringify(body.tags) : null,
+      body.status,
+      body.completionDate,
+      body.rating,
+      body.notes,
+      id
+    ).run()
+    
+    return c.json({ success: true, data: { id, ...body } })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// DELETE course
+api.delete('/courses/:id', async (c) => {
+  try {
+    const id = c.req.param('id')
+    await c.env.DB.prepare(`DELETE FROM courses WHERE id = ?`).bind(id).run()
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// ============================================================================
+// KANBAN API
+// ============================================================================
+
+// GET all kanban cards
+api.get('/kanban', async (c) => {
+  try {
+    const { results } = await c.env.DB.prepare(`
+      SELECT * FROM kanban_cards ORDER BY created_at DESC
+    `).all()
+    
+    return c.json({ success: true, data: results })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// POST create kanban card
+api.post('/kanban', async (c) => {
+  try {
+    const body = await c.req.json()
+    
+    const result = await c.env.DB.prepare(`
+      INSERT INTO kanban_cards (card_id, title, description, category, priority, status, assigned_to, due_date, tags)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      body.id,
+      body.title,
+      body.description || null,
+      body.category || null,
+      body.priority || 'Medium',
+      body.status || 'todo',
+      body.assignedTo || null,
+      body.dueDate || null,
+      body.tags ? JSON.stringify(body.tags) : null
+    ).run()
+    
+    return c.json({ success: true, data: { id: result.meta.last_row_id, ...body } })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// PUT update kanban card
+api.put('/kanban/:cardId', async (c) => {
+  try {
+    const cardId = c.req.param('cardId')
+    const body = await c.req.json()
+    
+    await c.env.DB.prepare(`
+      UPDATE kanban_cards SET
+        title = ?, description = ?, category = ?, priority = ?, status = ?,
+        assigned_to = ?, due_date = ?, tags = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE card_id = ?
+    `).bind(
+      body.title,
+      body.description,
+      body.category,
+      body.priority,
+      body.status,
+      body.assignedTo,
+      body.dueDate,
+      body.tags ? JSON.stringify(body.tags) : null,
+      cardId
+    ).run()
+    
+    return c.json({ success: true, data: { ...body } })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// DELETE kanban card
+api.delete('/kanban/:cardId', async (c) => {
+  try {
+    const cardId = c.req.param('cardId')
+    await c.env.DB.prepare(`DELETE FROM kanban_cards WHERE card_id = ?`).bind(cardId).run()
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 export default api

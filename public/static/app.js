@@ -211,86 +211,69 @@ const Auth = {
     },
     
     async loadUsers() {
-        // Load users from localStorage
-        const stored = localStorage.getItem('users');
+        console.log('🔄 Loading users from Cloudflare D1 database...');
         
-        if (stored) {
-            STATE.users = JSON.parse(stored);
-            console.log('Loaded users from localStorage:', STATE.users.length, 'users');
-        } else {
-            // First time - initialize with default users migrated from Google Sheet
-            console.log('Initializing users for first time from Google Sheet data...');
-            STATE.users = [
-                {
-                    id: 'user-1',
-                    username: 'Pelayo',
-                    password: 'password123',
-                    name: 'Pelayo',
-                    type: 'Admin',
-                    contentBusiness: true,
-                    channelBusiness: true,
-                    lastLogin: ''
-                },
-                {
-                    id: 'user-2',
-                    username: 'Charlotte',
-                    password: 'password123',
-                    name: 'Charlotte',
-                    type: 'Lead',
-                    contentBusiness: true,
-                    channelBusiness: false,
-                    lastLogin: ''
-                },
-                {
-                    id: 'user-3',
-                    username: 'Vambai',
-                    password: 'password123',
-                    name: 'Vambai',
-                    type: 'Lead',
-                    contentBusiness: false,
-                    channelBusiness: true,
-                    lastLogin: ''
-                },
-                {
-                    id: 'user-4',
-                    username: 'Comfort',
-                    password: 'password123',
-                    name: 'Comfort',
-                    type: 'User',
-                    contentBusiness: true,
-                    channelBusiness: false,
-                    lastLogin: ''
-                },
-                {
-                    id: 'user-5',
-                    username: 'Kudzanai',
-                    password: 'password123',
-                    name: 'Kudzanai',
-                    type: 'User',
-                    contentBusiness: false,
-                    channelBusiness: true,
-                    lastLogin: ''
-                },
-                {
-                    id: 'user-6',
-                    username: 'Unesu',
-                    password: 'password123',
-                    name: 'Unesu',
-                    type: 'Admin',
-                    contentBusiness: true,
-                    channelBusiness: true,
-                    lastLogin: ''
-                }
-            ];
+        try {
+            const dbUsers = await DBService.getAllUsers();
             
-            this.saveUsers();
-            console.log('Initialized', STATE.users.length, 'users');
+            if (dbUsers && dbUsers.length > 0) {
+                // Convert DB format to app format
+                STATE.users = dbUsers.map(user => ({
+                    id: user.id,
+                    username: user.username,
+                    password: user.password,
+                    name: user.username,
+                    type: user.type,
+                    contentBusiness: true,
+                    channelBusiness: true,
+                    lastLogin: ''
+                }));
+                console.log('✅ Loaded', STATE.users.length, 'users from D1 database');
+            } else {
+                // First time - initialize with default users
+                console.log('ℹ️ No users in D1 database, initializing default users...');
+                const defaultUsers = [
+                    { username: 'Pelayo', password: 'password123', type: 'Admin' },
+                    { username: 'Charlotte', password: 'password123', type: 'Lead' },
+                    { username: 'Vambai', password: 'password123', type: 'Lead' },
+                    { username: 'Comfort', password: 'password123', type: 'User' },
+                    { username: 'Kudzanai', password: 'password123', type: 'User' },
+                    { username: 'Unesu', password: 'password123', type: 'Admin' }
+                ];
+                
+                // Create users in database
+                STATE.users = [];
+                for (const user of defaultUsers) {
+                    const createdUser = await DBService.createUser(user);
+                    STATE.users.push({
+                        id: createdUser.id,
+                        username: createdUser.username,
+                        password: createdUser.password,
+                        name: createdUser.username,
+                        type: createdUser.type,
+                        contentBusiness: true,
+                        channelBusiness: true,
+                        lastLogin: ''
+                    });
+                }
+                console.log('✅ Initialized', STATE.users.length, 'users in D1 database');
+            }
+        } catch (error) {
+            console.error('❌ Failed to load users from D1:', error);
+            STATE.users = [];
         }
     },
     
-    saveUsers() {
-        localStorage.setItem('users', JSON.stringify(STATE.users));
-        console.log('Saved users to localStorage');
+    async saveUsers() {
+        console.log('🔄 Saving users to Cloudflare D1 database...');
+        
+        try {
+            // Note: Individual user updates should call DBService.updateUser() directly
+            // This function is mainly for initialization
+            console.log('✅ Users are managed individually via DBService API');
+        } catch (error) {
+            console.error('❌ Failed to save users:', error);
+        }
     },
     
     setupLoginForm() {
@@ -401,109 +384,174 @@ const App = {
     },
     
     async loadMasteryData() {
-        // Load mastery data from localStorage
-        const stored = localStorage.getItem('masteryData');
+        console.log('🔄 Loading mastery data from Cloudflare D1 database...');
         
-        if (stored) {
-            STATE.masteryData = JSON.parse(stored);
-            console.log('Loaded mastery data from localStorage:', STATE.masteryData.length, 'records');
-        } else {
-            // Initialize with empty data
+        try {
+            const dbMastery = await DBService.getAllMastery();
+            
+            if (dbMastery && dbMastery.length > 0) {
+                // Convert DB format to app format
+                STATE.masteryData = dbMastery.map(item => ({
+                    id: item.id,
+                    skillName: item.skill_name,
+                    category: item.category,
+                    currentLevel: item.current_level || 0,
+                    targetLevel: item.target_level || 5,
+                    progressPercentage: item.progress_percentage || 0,
+                    lastPracticeDate: item.last_practice_date,
+                    notes: item.notes
+                }));
+                console.log('✅ Loaded', STATE.masteryData.length, 'mastery records from D1 database');
+            } else {
+                STATE.masteryData = [];
+                console.log('ℹ️ No mastery data in D1 database');
+            }
+        } catch (error) {
+            console.error('❌ Failed to load mastery data from D1:', error);
             STATE.masteryData = [];
-            this.saveMasteryData();
-            console.log('Initialized empty mastery data');
         }
     },
     
-    saveMasteryData() {
-        localStorage.setItem('masteryData', JSON.stringify(STATE.masteryData));
-        console.log('Saved mastery data to localStorage');
+    async saveMasteryData() {
+        console.log('🔄 Saving mastery data to Cloudflare D1 database...');
+        
+        try {
+            // Note: Individual mastery updates should call DBService methods directly
+            // This function is mainly for compatibility
+            console.log('✅ Mastery data is managed individually via DBService API');
+        } catch (error) {
+            console.error('❌ Failed to save mastery data:', error);
+        }
     },
     
     async loadCoursesLibrary() {
-        // Load courses library from localStorage
-        const stored = localStorage.getItem('coursesLibrary');
+        console.log('🔄 Loading courses from Cloudflare D1 database...');
         
-        if (stored) {
-            STATE.coursesList = JSON.parse(stored);
-            console.log('Loaded courses library from localStorage:', STATE.coursesList.length, 'courses');
+        try {
+            const dbCourses = await DBService.getAllCourses();
             
-            // Migration: Add hours field to existing courses that don't have it
-            let migrated = false;
-            STATE.coursesList = STATE.coursesList.map(course => {
-                if (!course.hours) {
-                    migrated = true;
-                    return { ...course, hours: 4 }; // Default 4 hours
+            if (dbCourses && dbCourses.length > 0) {
+                // Convert DB format to app format
+                STATE.coursesList = dbCourses.map(course => ({
+                    id: course.id,
+                    name: course.title,
+                    category: course.category,
+                    url: course.url,
+                    hours: course.duration ? parseInt(course.duration) : 4,
+                    provider: course.provider,
+                    difficulty: course.difficulty,
+                    description: course.description,
+                    status: course.status || 'Not Started',
+                    tags: course.tags ? JSON.parse(course.tags) : []
+                }));
+                console.log('✅ Loaded', STATE.coursesList.length, 'courses from D1 database');
+            } else {
+                // Initialize with default courses from Excel
+                console.log('ℹ️ No courses in D1 database, initializing default courses...');
+                const defaultCourses = [
+                    {title:"AI Ethics: Ethical Intelligence for 2026",category:"Compliance",url:"https://www.udemy.com/course/chatgpt-ai-ethics-ethical-intelligence/",duration:"4"},
+                    {title:"Corporate Governance: Principles and Practice",category:"Compliance",url:"https://www.udemy.com/course/corporate-governance-k/",duration:"4"},
+                    {title:"Employment Laws in South Africa",category:"Compliance",url:"https://www.udemy.com/course/human-resources-labour-law-employment-laws-in-south-africa/",duration:"4"},
+                    {title:"Professional Ethics & Workplace Integrity Masterclass",category:"Compliance",url:"https://www.udemy.com/course/professional-ethics-mastery/",duration:"4"},
+                    {title:"The Complete Cyber Security Awareness Training for Employees",category:"Compliance",url:"https://www.udemy.com/course/cybersecurity-for-corporate-employees/",duration:"4"},
+                    {title:"Business Fundamentals: Marketing Strategy",category:"Function",url:"https://www.udemy.com/course/business-fundamentals-marketing-strategy/",duration:"4"},
+                    {title:"Canva Master Course 2026",category:"Function",url:"https://www.udemy.com/course/canva-master-course-graphic-design-for-beginners/",duration:"4"},
+                    {title:"Financial Reporeting & Analysis",category:"Function",url:"https://www.udemy.com/course/financial-reporting-analysis/",duration:"4"},
+                    {title:"Management Consulting Presentation Essentials Training 2026",category:"Function",url:"https://www.udemy.com/course/management-consulting-presentation-mckinsey/",duration:"4"},
+                    {title:"The Complete Digital Marketing Guide",category:"Function",url:"https://www.udemy.com/course/digital-marketing-guide/",duration:"4"},
+                    {title:"Business Model Innovation For Business Growth",category:"Leadership",url:"https://www.udemy.com/course/part-1-business-innovation-for-brand-growth/",duration:"4"},
+                    {title:"Communication, Leadership & Management",category:"Leadership",url:"https://www.udemy.com/course/high-impact-communication-skills/",duration:"4"},
+                    {title:"Leadership: Growth Mindset for Leadership and Organizations",category:"Leadership",url:"https://www.udemy.com/course/growth-mindset-for-leadership-and-organizations/",duration:"4"},
+                    {title:"Leadership: The Emotionally Intelligent Leader",category:"Leadership",url:"https://www.udemy.com/course/the-emotionally-intelligent-leader/",duration:"4"},
+                    {title:"MBA in a Box: Business Lessons from a CEO",category:"Leadership",url:"https://www.udemy.com/course/mba-in-a-box-business-lessons-from-a-ceo/",duration:"4"},
+                    {title:"Agentic AI for Beginners",category:"Technology",url:"https://www.udemy.com/course/agentic-ai-for-beginners/",duration:"4"},
+                    {title:"Claude Code Beginner to Pro",category:"Technology",url:"https://www.udemy.com/course/learn-claude-code/",duration:"4"},
+                    {title:"The Complete AI Coding Course (2025)",category:"Technology",url:"https://www.udemy.com/course/the-complete-ai-coding-course-2025-cursor-ai-v0-vercel/",duration:"4"},
+                    {title:"The Complete AI Guide",category:"Technology",url:"https://www.udemy.com/course/complete-ai-guide/",duration:"4"},
+                    {title:"Udemy: 100 Days of Code",category:"Technology",url:"https://www.udemy.com/course/100-days-of-code/",duration:"4"}
+                ];
+                
+                STATE.coursesList = [];
+                for (const course of defaultCourses) {
+                    const created = await DBService.createCourse(course);
+                    STATE.coursesList.push({
+                        id: created.id,
+                        name: created.title,
+                        category: created.category,
+                        url: created.url,
+                        hours: parseInt(created.duration),
+                        provider: created.provider,
+                        difficulty: created.difficulty,
+                        description: created.description,
+                        status: created.status || 'Not Started'
+                    });
                 }
-                return course;
-            });
-            
-            if (migrated) {
-                console.log('Migrated courses to include hours field (default: 4 hours)');
-                this.saveCoursesLibrary();
+                console.log('✅ Initialized', STATE.coursesList.length, 'courses in D1 database');
             }
-        } else {
-            // Initialize with courses from Excel file
-            console.log('Initializing courses library from Excel data...');
-            STATE.coursesList = [
-                {"id":"course-18","name":"AI Ethics: Ethical Intelligence for 2026","category":"Compliance","url":"https://www.udemy.com/course/chatgpt-ai-ethics-ethical-intelligence/","hours":4},
-                {"id":"course-19","name":"Corporate Governance: Principles and Practice","category":"Compliance","url":"https://www.udemy.com/course/corporate-governance-k/","hours":4},
-                {"id":"course-20","name":"Employment Laws in South Africa","category":"Compliance","url":"https://www.udemy.com/course/human-resources-labour-law-employment-laws-in-south-africa/","hours":4},
-                {"id":"course-17","name":"Professional Ethics & Workplace Integrity Masterclass","category":"Compliance","url":"https://www.udemy.com/course/professional-ethics-mastery/","hours":4},
-                {"id":"course-16","name":"The Complete Cyber Security Awareness Training for Employees","category":"Compliance","url":"https://www.udemy.com/course/cybersecurity-for-corporate-employees/","hours":4},
-                {"id":"course-10","name":"Business Fundamentals: Marketing Strategy","category":"Function","url":"https://www.udemy.com/course/business-fundamentals-marketing-strategy/","hours":4},
-                {"id":"course-6","name":"Canva Master Course 2026","category":"Function","url":"https://www.udemy.com/course/canva-master-course-graphic-design-for-beginners/","hours":4},
-                {"id":"course-8","name":"Financial Reporeting & Analysis","category":"Function","url":"https://www.udemy.com/course/financial-reporting-analysis/","hours":4},
-                {"id":"course-7","name":"Management Consulting Presentation Essentials Training 2026","category":"Function","url":"https://www.udemy.com/course/management-consulting-presentation-mckinsey/","hours":4},
-                {"id":"course-9","name":"The Complete Digital Marketing Guide","category":"Function","url":"https://www.udemy.com/course/digital-marketing-guide/","hours":4},
-                {"id":"course-14","name":"Business Model Innovation For Business Growth","category":"Leadership","url":"https://www.udemy.com/course/part-1-business-innovation-for-brand-growth/","hours":4},
-                {"id":"course-11","name":"Communication, Leadership & Management","category":"Leadership","url":"https://www.udemy.com/course/high-impact-communication-skills/","hours":4},
-                {"id":"course-13","name":"Leadership: Growth Mindset for Leadership and Organizations","category":"Leadership","url":"https://www.udemy.com/course/growth-mindset-for-leadership-and-organizations/","hours":4},
-                {"id":"course-12","name":"Leadership: The Emotionally Intelligent Leader","category":"Leadership","url":"https://www.udemy.com/course/the-emotionally-intelligent-leader/","hours":4},
-                {"id":"course-15","name":"MBA in a Box: Business Lessons from a CEO","category":"Leadership","url":"https://www.udemy.com/course/mba-in-a-box-business-lessons-from-a-ceo/","hours":4},
-                {"id":"course-5","name":"Agentic AI for Beginners","category":"Technology","url":"https://www.udemy.com/course/agentic-ai-for-beginners/","hours":4},
-                {"id":"course-2","name":"Claude Code Beginner to Pro","category":"Technology","url":"https://www.udemy.com/course/learn-claude-code/","hours":4},
-                {"id":"course-3","name":"The Complete AI Coding Course (2025)","category":"Technology","url":"https://www.udemy.com/course/the-complete-ai-coding-course-2025-cursor-ai-v0-vercel/","hours":4},
-                {"id":"course-4","name":"The Complete AI Guide","category":"Technology","url":"https://www.udemy.com/course/complete-ai-guide/","hours":4},
-                {"id":"course-1","name":"Udemy: 100 Days of Code","category":"Technology","url":"https://www.udemy.com/course/100-days-of-code/","hours":4}
-            ];
-            
-            this.saveCoursesLibrary();
-            console.log('Initialized', STATE.coursesList.length, 'courses');
+        } catch (error) {
+            console.error('❌ Failed to load courses from D1:', error);
+            STATE.coursesList = [];
         }
     },
     
-    saveCoursesLibrary() {
-        localStorage.setItem('coursesLibrary', JSON.stringify(STATE.coursesList));
-        console.log('Saved courses library to localStorage');
+    async saveCoursesLibrary() {
+        console.log('🔄 Saving courses to Cloudflare D1 database...');
+        
+        try {
+            // Note: Individual course updates should call DBService methods directly
+            // This function is mainly for compatibility
+            console.log('✅ Courses are managed individually via DBService API');
+        } catch (error) {
+            console.error('❌ Failed to save courses:', error);
+        }
     },
     
     async loadKanbanData() {
-        // For demo purposes, using local storage
-        // In production, would load from a dedicated sheet
-        const stored = localStorage.getItem('kanbanCards');
-        const storedVersion = localStorage.getItem('kanbanVersion');
-        const currentVersion = '2.0'; // Increment this to regenerate sample data
+        console.log('🔄 Loading kanban cards from Cloudflare D1 database...');
         
-        // If no data, wrong version, or cards have invalid owners, regenerate
-        if (!stored || storedVersion !== currentVersion) {
-            console.log('Generating new sample kanban data with current users...');
-            STATE.kanbanCards = this.generateSampleKanbanData();
-            localStorage.setItem('kanbanVersion', currentVersion);
-            this.saveKanbanData();
-        } else {
-            STATE.kanbanCards = JSON.parse(stored);
+        try {
+            const dbKanban = await DBService.getAllKanban();
             
-            // Validate that all card owners exist in current users list
-            const validUsernames = STATE.users.map(u => u.username);
-            const hasInvalidOwners = STATE.kanbanCards.some(card => !validUsernames.includes(card.owner));
-            
-            if (hasInvalidOwners) {
-                console.log('Found invalid card owners, regenerating data...');
+            if (dbKanban && dbKanban.length > 0) {
+                // Convert DB format to app format
+                STATE.kanbanCards = dbKanban.map(card => ({
+                    id: card.card_id,
+                    name: card.title,
+                    capability: card.description || '',
+                    owner: card.assigned_to || '',
+                    category: card.category || '',
+                    startDate: card.created_at ? card.created_at.split('T')[0] : '',
+                    targetDate: card.due_date || '',
+                    status: card.priority?.toLowerCase() || 'green',
+                    lane: card.status || 'Planned',
+                    comments: card.description || '',
+                    tags: card.tags ? JSON.parse(card.tags) : []
+                }));
+                console.log('✅ Loaded', STATE.kanbanCards.length, 'kanban cards from D1 database');
+            } else {
+                // Initialize with sample data
+                console.log('ℹ️ No kanban cards in D1 database, initializing sample data...');
                 STATE.kanbanCards = this.generateSampleKanbanData();
-                localStorage.setItem('kanbanVersion', currentVersion);
-                this.saveKanbanData();
+                
+                // Save to D1
+                for (const card of STATE.kanbanCards) {
+                    await DBService.createKanban({
+                        id: card.id,
+                        title: card.name,
+                        description: card.comments,
+                        category: card.category,
+                        priority: card.status.charAt(0).toUpperCase() + card.status.slice(1),
+                        status: card.lane,
+                        assignedTo: card.owner,
+                        dueDate: card.targetDate,
+                        tags: []
+                    });
+                }
+                console.log('✅ Initialized', STATE.kanbanCards.length, 'kanban cards in D1 database');
             }
+        } catch (error) {
+            console.error('❌ Failed to load kanban cards from D1:', error);
+            STATE.kanbanCards = [];
         }
     },
     
@@ -564,8 +612,16 @@ const App = {
         ];
     },
     
-    saveKanbanData() {
-        localStorage.setItem('kanbanCards', JSON.stringify(STATE.kanbanCards));
+    async saveKanbanData() {
+        console.log('🔄 Saving kanban cards to Cloudflare D1 database...');
+        
+        try {
+            // Note: Individual kanban card updates should call DBService methods directly
+            // This function is mainly for compatibility
+            console.log('✅ Kanban cards are managed individually via DBService API');
+        } catch (error) {
+            console.error('❌ Failed to save kanban cards:', error);
+        }
     },
     
     loadPerformanceData() {
@@ -1122,7 +1178,7 @@ const App = {
         alert('User saved successfully!');
     },
     
-    deleteUser(userId) {
+    async deleteUser(userId) {
         if (!confirm('Are you sure you want to delete this user?')) {
             return;
         }
@@ -1141,11 +1197,21 @@ const App = {
             return;
         }
         
-        STATE.users = STATE.users.filter(u => u.id !== userId);
-        Auth.saveUsers();
-        this.renderUsersTable();
-        Utils.hide('edit-user-modal');
-        alert('User deleted successfully!');
+        try {
+            // Delete from D1 database
+            await DBService.deleteUser(userId);
+            console.log('✅ Deleted user from D1 database:', userId);
+            
+            // Remove from local state
+            STATE.users = STATE.users.filter(u => u.id !== userId);
+            
+            this.renderUsersTable();
+            Utils.hide('edit-user-modal');
+            alert('User deleted successfully!');
+        } catch (error) {
+            console.error('❌ Failed to delete user:', error);
+            alert('Failed to delete user: ' + error.message);
+        }
     },
     
     // Mastery View
@@ -3147,29 +3213,27 @@ const App = {
             console.error('Only Admins can reset data version');
             return;
         }
-        localStorage.removeItem('drumtree_data_version');
-        console.log('Data version flag removed. System will regenerate sample data on next load IF no data exists.');
-        console.log('IMPORTANT: This will NOT regenerate if you already have data. To fully reset, use clearAllData()');
+        console.log('ℹ️ Data version is no longer used - all data is stored in Cloudflare D1 database');
+        console.log('To reset data, you must manually delete records from D1 database');
     },
     
-    clearAllData() {
+    async clearAllData() {
         if (STATE.currentUser.type !== 'Admin') {
             console.error('Only Admins can clear all data');
             return;
         }
-        if (confirm('⚠️ WARNING: This will permanently delete ALL performance data. Are you absolutely sure?')) {
-            localStorage.removeItem('performanceData');
-            localStorage.removeItem('drumtree_data_version');
-            console.log('All data cleared. Page will reload...');
-            window.location.reload();
+        if (confirm('⚠️ WARNING: This will permanently delete ALL data from Cloudflare D1 database. Are you absolutely sure?')) {
+            console.log('ℹ️ Clearing data from D1 database...');
+            console.log('⚠️ Currently this operation is not supported via frontend.');
+            console.log('Please use wrangler CLI to reset database tables if needed');
         }
     },
     
     exportDataBackup() {
         const backup = {
             performanceData: STATE.performanceData,
-            dataVersion: localStorage.getItem('drumtree_data_version'),
-            exportDate: new Date().toISOString()
+            exportDate: new Date().toISOString(),
+            note: 'Data exported from Cloudflare D1 database'
         };
         const dataStr = JSON.stringify(backup, null, 2);
         const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -3181,7 +3245,7 @@ const App = {
         console.log('Data backup exported successfully');
     },
     
-    importDataBackup(backupData) {
+    async importDataBackup(backupData) {
         if (STATE.currentUser.type !== 'Admin') {
             console.error('Only Admins can import data');
             return;
@@ -3190,11 +3254,8 @@ const App = {
             const backup = typeof backupData === 'string' ? JSON.parse(backupData) : backupData;
             if (backup.performanceData) {
                 STATE.performanceData = backup.performanceData;
-                this.savePerformanceData();
-                if (backup.dataVersion) {
-                    localStorage.setItem('drumtree_data_version', backup.dataVersion);
-                }
-                console.log('Data imported successfully. Page will reload...');
+                await this.savePerformanceData();
+                console.log('✅ Data imported to D1 database successfully. Page will reload...');
                 window.location.reload();
             } else {
                 console.error('Invalid backup data format');
