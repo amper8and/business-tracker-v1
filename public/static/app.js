@@ -2787,41 +2787,124 @@ const App = {
             return;
         }
         
-        // Generate daily data with new structure
-        const dailyData = this.generateDailyData(name, account, country, currency, zarRate, 26, subscriberBase);
-        
-        // Calculate MTD Net Additions from dailyData
-        const mtdNetAdditions = dailyData.reduce((sum, day) => sum + day.netAdditions, 0);
-        
-        // Get service version and SKU from first day's data
-        const serviceVersion = dailyData[0].serviceVersion;
-        const serviceSKU = dailyData[0].serviceSKU;
-        
-        // Create service object
-        const serviceData = {
-            name: name,
-            category: category,
-            account: account,
-            country: country,
-            serviceVersion: serviceVersion,
-            serviceSKU: serviceSKU,
-            currency: currency,
-            zarRate: zarRate,
-            mtdRevenue: mtdRevenue,
-            mtdTarget: mtdTarget,
-            actualRunRate: actualRunRate,
-            requiredRunRate: requiredRunRate,
-            subscriberBase: dailyData[dailyData.length - 1].subscriberBase,
-            mtdNetAdditions: mtdNetAdditions,
-            dailyData: dailyData
-        };
+        let dailyData;
+        let serviceData;
         
         if (serviceIndex !== '') {
-            // Update existing service
+            // EDITING EXISTING SERVICE - Preserve existing daily data and only update changed fields
+            const existingService = STATE.performanceData.services[parseInt(serviceIndex)];
+            
+            // Detect what changed
+            const accountChanged = existingService.account !== account;
+            const countryChanged = existingService.country !== country;
+            const categoryChanged = existingService.category !== category;
+            const currencyChanged = existingService.currency !== currency;
+            const zarRateChanged = existingService.zarRate !== zarRate;
+            const subscriberBaseChanged = existingService.subscriberBase !== subscriberBase;
+            
+            // Start with existing daily data
+            dailyData = existingService.dailyData ? [...existingService.dailyData] : [];
+            
+            // Update service-level fields in daily data only if they changed
+            dailyData = dailyData.map((day, index) => {
+                const updatedDay = { ...day };
+                
+                // Update fields that changed
+                if (categoryChanged) updatedDay.businessCategory = category;
+                if (accountChanged) updatedDay.account = account;
+                if (countryChanged) updatedDay.country = country;
+                if (currencyChanged) updatedDay.currency = currency;
+                if (zarRateChanged) {
+                    updatedDay.zarRate = zarRate;
+                    // Recalculate revenue if ZAR rate changed: Daily Revenue = Daily Billing (LCU) × ZAR Rate
+                    updatedDay.revenue = Math.round((updatedDay.dailyBillingLCU || 0) * zarRate);
+                }
+                
+                // Update subscriber base only on the LAST day if it changed
+                if (subscriberBaseChanged && index === dailyData.length - 1) {
+                    updatedDay.subscriberBase = subscriberBase;
+                }
+                
+                // Regenerate service version and SKU if account or country changed
+                if (accountChanged || countryChanged) {
+                    const accountCode = account.substring(0, 2);
+                    const countryCode = this.getCountryCode(country);
+                    updatedDay.serviceVersion = `${name} ${accountCode}${countryCode}`;
+                    updatedDay.serviceSKU = `${updatedDay.serviceVersion} (${currency})`;
+                }
+                
+                return updatedDay;
+            });
+            
+            // If no daily data exists (shouldn't happen, but handle it), generate new data
+            if (dailyData.length === 0) {
+                console.warn('No existing daily data found, generating new data');
+                const today = new Date();
+                const currentDay = today.getDate();
+                dailyData = this.generateDailyData(name, account, country, currency, zarRate, currentDay, subscriberBase);
+            }
+            
+            // Calculate MTD Net Additions from updated dailyData
+            const mtdNetAdditions = dailyData.reduce((sum, day) => sum + (day.netAdditions || 0), 0);
+            
+            // Get service version and SKU (use from first day's data)
+            const serviceVersion = dailyData[0].serviceVersion;
+            const serviceSKU = dailyData[0].serviceSKU;
+            
+            // Create updated service object
+            serviceData = {
+                name: name,
+                category: category,
+                account: account,
+                country: country,
+                serviceVersion: serviceVersion,
+                serviceSKU: serviceSKU,
+                currency: currency,
+                zarRate: zarRate,
+                mtdRevenue: mtdRevenue,
+                mtdTarget: mtdTarget,
+                actualRunRate: actualRunRate,
+                requiredRunRate: requiredRunRate,
+                subscriberBase: subscriberBase,
+                mtdNetAdditions: mtdNetAdditions,
+                dailyData: dailyData
+            };
+            
             STATE.performanceData.services[parseInt(serviceIndex)] = serviceData;
-            console.log('Updated service:', name);
+            console.log('Updated service (preserved daily data):', name);
+            
         } else {
-            // Add new service
+            // ADDING NEW SERVICE - Generate fresh daily data
+            const today = new Date();
+            const currentDay = today.getDate();
+            dailyData = this.generateDailyData(name, account, country, currency, zarRate, currentDay, subscriberBase);
+            
+            // Calculate MTD Net Additions from dailyData
+            const mtdNetAdditions = dailyData.reduce((sum, day) => sum + (day.netAdditions || 0), 0);
+            
+            // Get service version and SKU from first day's data
+            const serviceVersion = dailyData[0].serviceVersion;
+            const serviceSKU = dailyData[0].serviceSKU;
+            
+            // Create service object
+            serviceData = {
+                name: name,
+                category: category,
+                account: account,
+                country: country,
+                serviceVersion: serviceVersion,
+                serviceSKU: serviceSKU,
+                currency: currency,
+                zarRate: zarRate,
+                mtdRevenue: mtdRevenue,
+                mtdTarget: mtdTarget,
+                actualRunRate: actualRunRate,
+                requiredRunRate: requiredRunRate,
+                subscriberBase: dailyData[dailyData.length - 1].subscriberBase,
+                mtdNetAdditions: mtdNetAdditions,
+                dailyData: dailyData
+            };
+            
             STATE.performanceData.services.push(serviceData);
             console.log('Added new service:', name);
         }
