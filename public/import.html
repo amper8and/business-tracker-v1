@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Import - Business Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #f3f4f6; 
+            padding: 2rem;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 2rem; 
+            border-radius: 8px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 { color: #111827; margin-bottom: 1rem; }
+        .section { margin-bottom: 2rem; padding: 1rem; background: #f9fafb; border-radius: 6px; }
+        .section h2 { color: #374151; font-size: 1.25rem; margin-bottom: 1rem; }
+        .upload-area { 
+            border: 2px dashed #d1d5db; 
+            padding: 2rem; 
+            text-align: center; 
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover { border-color: #3b82f6; background: #f0f9ff; }
+        .upload-area.drag-over { border-color: #3b82f6; background: #dbeafe; }
+        input[type="file"] { display: none; }
+        .btn { 
+            padding: 0.75rem 1.5rem; 
+            background: #3b82f6; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 1rem;
+            margin: 0.5rem;
+        }
+        .btn:hover { background: #2563eb; }
+        .btn-secondary { background: #6b7280; }
+        .btn-secondary:hover { background: #4b5563; }
+        .btn-success { background: #10b981; }
+        .btn-success:hover { background: #059669; }
+        .preview { 
+            max-height: 400px; 
+            overflow: auto; 
+            margin-top: 1rem; 
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 0.875rem;
+        }
+        th, td { 
+            padding: 0.5rem; 
+            text-align: left; 
+            border-bottom: 1px solid #e5e7eb; 
+        }
+        th { background: #f9fafb; font-weight: 600; color: #374151; position: sticky; top: 0; }
+        .status { 
+            padding: 0.5rem; 
+            border-radius: 6px; 
+            margin-top: 1rem; 
+        }
+        .status.success { background: #d1fae5; color: #065f46; }
+        .status.error { background: #fee2e2; color: #991b1b; }
+        .status.info { background: #dbeafe; color: #1e40af; }
+        pre { 
+            background: #1f2937; 
+            color: #f3f4f6; 
+            padding: 1rem; 
+            border-radius: 6px; 
+            overflow-x: auto;
+            font-size: 0.875rem;
+        }
+        .template { margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Data Import Tool</h1>
+        <p style="color: #6b7280; margin-bottom: 2rem;">Upload CSV or Excel files to import services and daily data into the database.</p>
+
+        <!-- Upload Section -->
+        <div class="section">
+            <h2>1. Upload Your Data File</h2>
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                <i style="font-size: 3rem; color: #9ca3af;">📁</i>
+                <p style="margin-top: 1rem; color: #6b7280;">Click to select or drag & drop CSV/Excel file here</p>
+                <p style="font-size: 0.875rem; color: #9ca3af; margin-top: 0.5rem;">Supports .csv, .xlsx, .xls files</p>
+            </div>
+            <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" onchange="handleFileSelect(event)">
+        </div>
+
+        <!-- Preview Section -->
+        <div class="section" id="previewSection" style="display: none;">
+            <h2>2. Preview Data</h2>
+            <div id="previewStats" style="margin-bottom: 1rem;"></div>
+            <div class="preview" id="dataPreview"></div>
+            <div style="margin-top: 1rem;">
+                <button class="btn btn-success" onclick="importData()">✅ Import to Database</button>
+                <button class="btn btn-secondary" onclick="resetUpload()">🔄 Upload Different File</button>
+            </div>
+        </div>
+
+        <!-- Status Section -->
+        <div id="statusSection"></div>
+
+        <!-- Template Section -->
+        <div class="section">
+            <h2>3. CSV Template Format</h2>
+            <p style="color: #6b7280; margin-bottom: 1rem;">Your CSV should have these columns (copy the header row):</p>
+            
+            <div class="template">
+                <strong>Services + Daily Data Format:</strong>
+                <pre>service_name,category,account,country,currency,zar_rate,required_run_rate,subscriber_base,day,date,daily_billing_lcu,target,churned_subs,daily_acquisitions,net_additions,subscriber_base_daily</pre>
+            </div>
+
+            <div class="template">
+                <strong>Example Row:</strong>
+                <pre>YoGamezPro,Content Business,Vodacom,ZIMBABWE,USD,18.5,50000,85000,1,2026-01-01,50000,46000,1700,1750,50,85050</pre>
+            </div>
+
+            <button class="btn" onclick="downloadTemplate()">📥 Download CSV Template</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        let parsedData = null;
+
+        // Drag and drop
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) handleFile(file);
+        }
+
+        function handleFile(file) {
+            const fileName = file.name;
+            const fileExt = fileName.split('.').pop().toLowerCase();
+
+            if (!['csv', 'xlsx', 'xls'].includes(fileExt)) {
+                showStatus('Error: Please upload a CSV or Excel file', 'error');
+                return;
+            }
+
+            showStatus('Reading file...', 'info');
+
+            const reader = new FileReader();
+            
+            if (fileExt === 'csv') {
+                reader.onload = (e) => parseCSV(e.target.result);
+                reader.readAsText(file);
+            } else {
+                reader.onload = (e) => parseExcel(e.target.result);
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function parseCSV(text) {
+            const lines = text.split('\n').filter(line => line.trim());
+            const headers = lines[0].split(',').map(h => h.trim());
+            
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim());
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index];
+                });
+                data.push(row);
+            }
+
+            processData(data);
+        }
+
+        function parseExcel(buffer) {
+            const workbook = XLSX.read(buffer, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const data = XLSX.utils.sheet_to_json(firstSheet);
+            processData(data);
+        }
+
+        function processData(data) {
+            parsedData = data;
+            
+            // Group by service
+            const services = {};
+            data.forEach(row => {
+                const serviceName = row.service_name || row.name;
+                if (!services[serviceName]) {
+                    services[serviceName] = {
+                        name: serviceName,
+                        category: row.category,
+                        account: row.account,
+                        country: row.country,
+                        currency: row.currency,
+                        zarRate: parseFloat(row.zar_rate),
+                        requiredRunRate: parseFloat(row.required_run_rate),
+                        subscriberBase: parseInt(row.subscriber_base),
+                        dailyData: []
+                    };
+                }
+                
+                services[serviceName].dailyData.push({
+                    day: parseInt(row.day),
+                    date: row.date,
+                    dailyBillingLCU: parseFloat(row.daily_billing_lcu || 0),
+                    target: parseFloat(row.target || 0),
+                    churnedSubs: parseInt(row.churned_subs || 0),
+                    dailyAcquisitions: parseInt(row.daily_acquisitions || 0),
+                    netAdditions: parseInt(row.net_additions || 0),
+                    subscriberBase: parseInt(row.subscriber_base_daily || row.subscriber_base)
+                });
+            });
+
+            parsedData = { services: Object.values(services) };
+            
+            showPreview(data);
+            showStatus(`✅ Parsed ${data.length} rows, ${parsedData.services.length} services`, 'success');
+        }
+
+        function showPreview(data) {
+            const preview = document.getElementById('dataPreview');
+            const stats = document.getElementById('previewStats');
+            
+            stats.innerHTML = `
+                <strong>📊 Summary:</strong> 
+                ${data.length} total rows | 
+                ${parsedData.services.length} services | 
+                ${parsedData.services.reduce((sum, s) => sum + s.dailyData.length, 0)} daily entries
+            `;
+
+            const headers = Object.keys(data[0]);
+            let html = '<table><thead><tr>';
+            headers.forEach(h => html += `<th>${h}</th>`);
+            html += '</tr></thead><tbody>';
+            
+            data.slice(0, 50).forEach(row => {
+                html += '<tr>';
+                headers.forEach(h => html += `<td>${row[h] || ''}</td>`);
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            
+            if (data.length > 50) {
+                html += `<p style="padding: 1rem; color: #6b7280;">Showing first 50 rows of ${data.length}</p>`;
+            }
+            
+            preview.innerHTML = html;
+            document.getElementById('previewSection').style.display = 'block';
+        }
+
+        async function importData() {
+            if (!parsedData) {
+                showStatus('No data to import', 'error');
+                return;
+            }
+
+            showStatus('🔄 Importing data to database...', 'info');
+
+            try {
+                const response = await fetch('/api/migrate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(parsedData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showStatus(`✅ SUCCESS! Imported ${parsedData.services.length} services with all daily data to the database!`, 'success');
+                    setTimeout(() => {
+                        if (confirm('Import successful! Go to main app?')) {
+                            window.location.href = '/';
+                        }
+                    }, 2000);
+                } else {
+                    showStatus(`❌ Import failed: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ Import failed: ${error.message}`, 'error');
+            }
+        }
+
+        function resetUpload() {
+            parsedData = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('previewSection').style.display = 'none';
+            document.getElementById('statusSection').innerHTML = '';
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('statusSection');
+            status.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function downloadTemplate() {
+            const template = `service_name,category,account,country,currency,zar_rate,required_run_rate,subscriber_base,day,date,daily_billing_lcu,target,churned_subs,daily_acquisitions,net_additions,subscriber_base_daily
+YoGamezPro,Content Business,Vodacom,ZIMBABWE,USD,18.5,50000,85000,1,2026-01-01,50000,46000,1700,1750,50,85050
+YoGamezPro,Content Business,Vodacom,ZIMBABWE,USD,18.5,50000,85000,2,2026-01-02,51000,47000,1690,1740,50,85100
+MobiStream,Content Business,MTN,SOUTH AFRICA,ZAR,1.0,48000,69000,1,2026-01-01,48000,45000,1380,1400,20,69020`;
+
+            const blob = new Blob([template], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'import_template.csv';
+            a.click();
+        }
+    </script>
+</body>
+</html>
