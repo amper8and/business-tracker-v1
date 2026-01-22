@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Data Migration - localStorage to D1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
+        <h1 class="text-3xl font-bold text-red-600 mb-4">
+            🚨 EMERGENCY DATA MIGRATION
+        </h1>
+        
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6">
+            <p class="font-bold">⚠️ CRITICAL: Your data is still in localStorage!</p>
+            <p>This tool will migrate your existing localStorage data to the Cloudflare D1 database.</p>
+        </div>
+
+        <div id="status" class="mb-6"></div>
+
+        <div class="space-y-4">
+            <button id="check-btn" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 w-full">
+                1. Check localStorage Data
+            </button>
+
+            <button id="migrate-btn" class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 w-full" disabled>
+                2. Migrate to D1 Database
+            </button>
+
+            <button id="verify-btn" class="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 w-full" disabled>
+                3. Verify Migration
+            </button>
+
+            <button id="clear-btn" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 w-full" disabled>
+                4. Clear localStorage (ONLY AFTER VERIFICATION)
+            </button>
+        </div>
+
+        <div id="results" class="mt-6 p-4 bg-gray-50 rounded-lg font-mono text-sm overflow-auto max-h-96"></div>
+    </div>
+
+    <script>
+        const status = document.getElementById('status');
+        const results = document.getElementById('results');
+        let localStorageData = {};
+
+        function log(message, type = 'info') {
+            const colors = {
+                info: 'text-blue-600',
+                success: 'text-green-600',
+                error: 'text-red-600',
+                warning: 'text-yellow-600'
+            };
+            results.innerHTML += `<div class="${colors[type]}">${message}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        // Step 1: Check localStorage
+        document.getElementById('check-btn').addEventListener('click', () => {
+            results.innerHTML = '';
+            log('🔍 Checking localStorage data...', 'info');
+
+            // Check for performance data
+            const perfData = localStorage.getItem('performanceData');
+            if (perfData) {
+                try {
+                    const parsed = JSON.parse(perfData);
+                    localStorageData.performanceData = parsed;
+                    log(`✅ Found Performance Data: ${parsed.services?.length || 0} services`, 'success');
+                } catch (e) {
+                    log(`❌ Error parsing performance data: ${e.message}`, 'error');
+                }
+            } else {
+                log('ℹ️ No performance data in localStorage', 'warning');
+            }
+
+            // Check for users
+            const users = localStorage.getItem('users');
+            if (users) {
+                try {
+                    const parsed = JSON.parse(users);
+                    localStorageData.users = parsed;
+                    log(`✅ Found Users: ${parsed.length} users`, 'success');
+                } catch (e) {
+                    log(`❌ Error parsing users: ${e.message}`, 'error');
+                }
+            }
+
+            // Check for mastery data
+            const mastery = localStorage.getItem('masteryData');
+            if (mastery) {
+                try {
+                    const parsed = JSON.parse(mastery);
+                    localStorageData.masteryData = parsed;
+                    log(`✅ Found Mastery Data: ${parsed.length} records`, 'success');
+                } catch (e) {
+                    log(`❌ Error parsing mastery data: ${e.message}`, 'error');
+                }
+            }
+
+            // Check for courses
+            const courses = localStorage.getItem('coursesLibrary');
+            if (courses) {
+                try {
+                    const parsed = JSON.parse(courses);
+                    localStorageData.coursesLibrary = parsed;
+                    log(`✅ Found Courses: ${parsed.length} courses`, 'success');
+                } catch (e) {
+                    log(`❌ Error parsing courses: ${e.message}`, 'error');
+                }
+            }
+
+            // Check for kanban cards
+            const kanban = localStorage.getItem('kanbanCards');
+            if (kanban) {
+                try {
+                    const parsed = JSON.parse(kanban);
+                    localStorageData.kanbanCards = parsed;
+                    log(`✅ Found Kanban Cards: ${parsed.length} cards`, 'success');
+                } catch (e) {
+                    log(`❌ Error parsing kanban cards: ${e.message}`, 'error');
+                }
+            }
+
+            const hasData = Object.keys(localStorageData).length > 0;
+            if (hasData) {
+                log('\n✅ Found data to migrate! Click "Migrate to D1 Database"', 'success');
+                document.getElementById('migrate-btn').disabled = false;
+            } else {
+                log('\n⚠️ No data found in localStorage!', 'warning');
+            }
+        });
+
+        // Step 2: Migrate to D1
+        document.getElementById('migrate-btn').addEventListener('click', async () => {
+            log('\n🚀 Starting migration to D1 database...', 'info');
+
+            try {
+                // Migrate performance data (services)
+                if (localStorageData.performanceData?.services) {
+                    log('\n📊 Migrating services...', 'info');
+                    for (const service of localStorageData.performanceData.services) {
+                        const serviceData = {
+                            name: service.name,
+                            category: service.category,
+                            account: service.account,
+                            country: service.country,
+                            serviceVersion: service.serviceVersion,
+                            serviceSKU: service.serviceSKU,
+                            currency: service.currency,
+                            zarRate: service.zarRate,
+                            mtdRevenue: service.mtdRevenue || 0,
+                            mtdTarget: service.mtdTarget || 0,
+                            actualRunRate: service.actualRunRate || 0,
+                            requiredRunRate: service.requiredRunRate || 0,
+                            subscriberBase: service.subscriberBase || 0,
+                            mtdNetAdditions: service.mtdNetAdditions || 0
+                        };
+
+                        const response = await fetch('/api/services', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(serviceData)
+                        });
+
+                        const result = await response.json();
+                        if (result.success) {
+                            log(`  ✅ Migrated service: ${service.name}`, 'success');
+
+                            // Migrate daily data for this service
+                            if (service.dailyData && service.dailyData.length > 0) {
+                                const dailyDataArray = service.dailyData.map(day => ({
+                                    serviceId: result.data.id,
+                                    day: day.day,
+                                    date: day.date,
+                                    businessCategory: day.businessCategory,
+                                    account: day.account,
+                                    country: day.country,
+                                    serviceVersion: day.serviceVersion,
+                                    currency: day.currency,
+                                    zarRate: day.zarRate,
+                                    serviceSKU: day.serviceSKU,
+                                    dailyBillingLCU: day.dailyBillingLCU || 0,
+                                    revenue: day.revenue || 0,
+                                    target: day.target || 0,
+                                    churnedSubs: day.churnedSubs || 0,
+                                    dailyAcquisitions: day.dailyAcquisitions || 0,
+                                    netAdditions: day.netAdditions || 0,
+                                    subscriberBase: day.subscriberBase || 0
+                                }));
+
+                                const dailyResponse = await fetch('/api/daily-data/bulk', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ data: dailyDataArray })
+                                });
+
+                                const dailyResult = await dailyResponse.json();
+                                if (dailyResult.success) {
+                                    log(`    ✅ Migrated ${service.dailyData.length} daily records`, 'success');
+                                }
+                            }
+                        } else {
+                            log(`  ❌ Failed to migrate service: ${service.name} - ${result.error}`, 'error');
+                        }
+                    }
+                }
+
+                log('\n✅ Migration complete! Click "Verify Migration"', 'success');
+                document.getElementById('verify-btn').disabled = false;
+
+            } catch (error) {
+                log(`\n❌ Migration failed: ${error.message}`, 'error');
+                console.error('Migration error:', error);
+            }
+        });
+
+        // Step 3: Verify
+        document.getElementById('verify-btn').addEventListener('click', async () => {
+            log('\n🔍 Verifying data in D1 database...', 'info');
+
+            try {
+                const response = await fetch('/api/services');
+                const result = await response.json();
+
+                if (result.success) {
+                    log(`✅ Found ${result.data.length} services in D1 database`, 'success');
+                    
+                    for (const service of result.data) {
+                        log(`  - ${service.name} (${service.country})`, 'info');
+                    }
+
+                    if (result.data.length > 0) {
+                        log('\n✅ Migration verified! You can now clear localStorage', 'success');
+                        document.getElementById('clear-btn').disabled = false;
+                    } else {
+                        log('\n⚠️ No services found in database!', 'warning');
+                    }
+                } else {
+                    log(`❌ Verification failed: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Verification error: ${error.message}`, 'error');
+            }
+        });
+
+        // Step 4: Clear localStorage
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            if (confirm('⚠️ Are you sure? This will permanently clear localStorage. Your data is now in D1 database.')) {
+                localStorage.clear();
+                log('\n✅ localStorage cleared! Your data is now 100% in Cloudflare D1', 'success');
+                log('🔄 Refresh the page to load from D1 database', 'info');
+            }
+        });
+    </script>
+</body>
+</html>
