@@ -347,7 +347,7 @@ api.post('/migrate', async (c) => {
 api.get('/users', async (c) => {
   try {
     const { results } = await c.env.DB.prepare(`
-      SELECT id, username, type, created_at, updated_at FROM users ORDER BY username
+      SELECT id, username, password, type, created_at, updated_at FROM users ORDER BY username
     `).all()
     
     return c.json({ success: true, data: results })
