@@ -786,18 +786,6 @@ app.get('*', async (c) => {
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
-                            <label for="perf-service-mtd-revenue">MTD Revenue (ZAR) *</label>
-                            <input type="number" id="perf-service-mtd-revenue" placeholder="1250000" min="0" step="1000" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="perf-service-mtd-target">MTD Target (ZAR) *</label>
-                            <input type="number" id="perf-service-mtd-target" placeholder="1200000" min="0" step="1000" required>
-                        </div>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
                             <label for="perf-service-actual-runrate">Actual Run Rate (ZAR/day) *</label>
                             <input type="number" id="perf-service-actual-runrate" placeholder="48076" min="0" step="100" required>
                         </div>

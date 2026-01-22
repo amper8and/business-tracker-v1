@@ -1835,7 +1835,7 @@ const App = {
                                     <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Service Version</th>
                                     <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Service SKU</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">MTD Revenue</th>
-                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">MTD Target</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Full Month Target</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Variance</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">% to Target</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Actual Run Rate</th>
@@ -2419,6 +2419,15 @@ const App = {
         if (window.revenueChart) window.revenueChart.destroy();
         if (window.runrateChart) window.runrateChart.destroy();
         
+        // Get days in current month for Full Month Target calculation
+        const today = new Date();
+        const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+        
+        // Calculate Full Month Target = Sum of all Required Run Rates × Days in Month
+        const fullMonthTarget = services.reduce((sum, service) => 
+            sum + (service.requiredRunRate * daysInMonth), 0
+        );
+        
         // Aggregate daily data across services
         const aggregatedDaily = {};
         services.forEach(service => {
@@ -2458,7 +2467,7 @@ const App = {
                         borderWidth: 2
                     }, {
                         label: showTargetToDate ? 'Target to Date' : 'Full Month Target',
-                        data: showTargetToDate ? cumulativeTargets : Array(sortedDates.length).fill(cumulativeTargets[cumulativeTargets.length - 1]),
+                        data: showTargetToDate ? cumulativeTargets : Array(sortedDates.length).fill(fullMonthTarget),
                         borderColor: '#f59e0b',
                         backgroundColor: 'rgba(245, 158, 11, 0.1)',
                         borderDash: [5, 5],
@@ -2652,9 +2661,16 @@ const App = {
         
         const isAdmin = STATE.currentUser.type === 'Admin';
         
+        // Get days in current month for Full Month Target calculation
+        const today = new Date();
+        const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+        
         tbody.innerHTML = services.map((service, index) => {
+            // Calculate Full Month Target = Required Run Rate × Days in Month
+            const fullMonthTarget = service.requiredRunRate * daysInMonth;
+            
             const variance = service.mtdRevenue - service.mtdTarget;
-            const variancePercent = ((variance / service.mtdTarget) * 100).toFixed(1);
+            const variancePercent = service.mtdTarget > 0 ? ((variance / service.mtdTarget) * 100).toFixed(1) : '0.0';
             const varianceColor = variance >= 0 ? '#10b981' : '#ef4444';
             const varianceIcon = variance >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
             
@@ -2678,7 +2694,7 @@ const App = {
                     <td style="padding: 0.75rem;">${service.serviceVersion || 'N/A'}</td>
                     <td style="padding: 0.75rem;">${service.serviceSKU || 'N/A'}</td>
                     <td style="padding: 0.75rem; text-align: right; font-weight: 600;">R ${(service.mtdRevenue / 1000000).toFixed(2)}M</td>
-                    <td style="padding: 0.75rem; text-align: right;">R ${(service.mtdTarget / 1000000).toFixed(2)}M</td>
+                    <td style="padding: 0.75rem; text-align: right;">R ${(fullMonthTarget / 1000000).toFixed(2)}M</td>
                     <td style="padding: 0.75rem; text-align: right; color: ${varianceColor}; font-weight: 600;">
                         <i class="fas ${varianceIcon}"></i> R ${Math.abs(variance / 1000).toFixed(0)}K
                     </td>
@@ -2744,8 +2760,6 @@ const App = {
             document.getElementById('perf-service-country').value = service.country || '';
             document.getElementById('perf-service-currency').value = service.currency || 'ZAR';
             document.getElementById('perf-service-zar-rate').value = service.zarRate || 1.0;
-            document.getElementById('perf-service-mtd-revenue').value = service.mtdRevenue;
-            document.getElementById('perf-service-mtd-target').value = service.mtdTarget;
             document.getElementById('perf-service-actual-runrate').value = service.actualRunRate;
             document.getElementById('perf-service-required-runrate').value = service.requiredRunRate;
             document.getElementById('perf-service-subscriber-base').value = service.subscriberBase;
@@ -2768,16 +2782,13 @@ const App = {
         const country = document.getElementById('perf-service-country').value;
         const currency = document.getElementById('perf-service-currency').value;
         const zarRate = parseFloat(document.getElementById('perf-service-zar-rate').value);
-        const mtdRevenue = parseInt(document.getElementById('perf-service-mtd-revenue').value);
-        const mtdTarget = parseInt(document.getElementById('perf-service-mtd-target').value);
         const actualRunRate = parseInt(document.getElementById('perf-service-actual-runrate').value);
         const requiredRunRate = parseInt(document.getElementById('perf-service-required-runrate').value);
         const subscriberBase = parseInt(document.getElementById('perf-service-subscriber-base').value);
         
         // Validate required fields
         if (!name || !category || !account || !country || !currency || isNaN(zarRate) || 
-            isNaN(mtdRevenue) || isNaN(mtdTarget) || isNaN(actualRunRate) || 
-            isNaN(requiredRunRate) || isNaN(subscriberBase)) {
+            isNaN(actualRunRate) || isNaN(requiredRunRate) || isNaN(subscriberBase)) {
             alert('Please fill in all required fields');
             return;
         }
@@ -2844,6 +2855,14 @@ const App = {
                 dailyData = this.generateDailyData(name, account, country, currency, zarRate, currentDay, subscriberBase);
             }
             
+            // Calculate MTD Revenue from daily data (sum of all daily revenues)
+            const mtdRevenue = dailyData.reduce((sum, day) => sum + (day.revenue || 0), 0);
+            
+            // Calculate MTD Target: Required Run Rate × Current Day
+            const today = new Date();
+            const currentDay = today.getDate();
+            const mtdTarget = requiredRunRate * currentDay;
+            
             // Calculate MTD Net Additions from updated dailyData
             const mtdNetAdditions = dailyData.reduce((sum, day) => sum + (day.netAdditions || 0), 0);
             
@@ -2878,6 +2897,12 @@ const App = {
             const today = new Date();
             const currentDay = today.getDate();
             dailyData = this.generateDailyData(name, account, country, currency, zarRate, currentDay, subscriberBase);
+            
+            // Calculate MTD Revenue from daily data (sum of all daily revenues)
+            const mtdRevenue = dailyData.reduce((sum, day) => sum + (day.revenue || 0), 0);
+            
+            // Calculate MTD Target: Required Run Rate × Current Day
+            const mtdTarget = requiredRunRate * currentDay;
             
             // Calculate MTD Net Additions from dailyData
             const mtdNetAdditions = dailyData.reduce((sum, day) => sum + (day.netAdditions || 0), 0);
