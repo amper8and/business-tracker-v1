@@ -1737,8 +1737,8 @@ const App = {
                     <div class="filter-group" style="flex: 1; min-width: 150px;">
                         <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Month</label>
                         <select id="perf-month-filter" class="filter-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; background: white; cursor: pointer;">
-                            <option value="2025-01">January 2025</option>
-                            <option value="2024-12">December 2024</option>
+                            <option value="2026-01">January 2026</option>
+                            <option value="2025-12">December 2025</option>
                         </select>
                     </div>
                     <div class="filter-group" style="flex: 0; min-width: auto;">
@@ -1966,7 +1966,7 @@ const App = {
                     service: 'All',
                     serviceVersion: 'All',
                     serviceSKU: 'All',
-                    month: '2025-01'
+                    month: '2026-01'
                 }
             };
             // Save the initial data
@@ -1991,6 +1991,10 @@ const App = {
         const serviceVersion = `${serviceName} ${accountCode}${countryCode}`;
         const serviceSKU = `${serviceVersion} (${currency})`;
         
+        // Generate data for January 2026 (current month, MTD)
+        const currentYear = 2026;
+        const currentMonth = 1; // January
+        
         for (let i = 1; i <= days; i++) {
             const dailyBilling = baseDailyBilling + (Math.random() - 0.5) * variance;
             const dailyTargetLCU = baseTarget + (Math.random() - 0.5) * variance * 0.5;
@@ -2011,7 +2015,7 @@ const App = {
             
             dailyData.push({
                 day: i,
-                date: `2025-01-${String(i).padStart(2, '0')}`,
+                date: `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(i).padStart(2, '0')}`,
                 businessCategory: 'Content Business',
                 account: account,
                 country: country,

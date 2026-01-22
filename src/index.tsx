@@ -874,8 +874,8 @@ app.get('*', async (c) => {
                     <div class="filter-group" style="flex: 1; min-width: 200px;">
                         <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Month</label>
                         <select id="bulk-edit-month" class="filter-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem;">
-                            <option value="2025-01">January 2025</option>
-                            <option value="2024-12">December 2024</option>
+                            <option value="2026-01">January 2026</option>
+                            <option value="2025-12">December 2025</option>
                         </select>
                     </div>
                     <div class="filter-group" style="flex: 1; min-width: 200px;">
