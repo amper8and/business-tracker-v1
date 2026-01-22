@@ -953,6 +953,7 @@ app.get('*', async (c) => {
     <!-- Scripts -->
     <script src="/static/countries-currencies.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/static/db-service.js"></script>
     <script src="/static/app.js"></script>
 </body>
 </html>
