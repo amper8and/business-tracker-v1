@@ -1700,9 +1700,37 @@ const App = {
                         </select>
                     </div>
                     <div class="filter-group" style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Account</label>
+                        <select id="perf-account-filter" class="filter-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; background: white; cursor: pointer;">
+                            <option value="All">All Accounts</option>
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="filter-group" style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Country</label>
+                        <select id="perf-country-filter" class="filter-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; background: white; cursor: pointer;">
+                            <option value="All">All Countries</option>
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="filter-group" style="flex: 1; min-width: 150px;">
                         <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Service</label>
                         <select id="perf-service-filter" class="filter-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; background: white; cursor: pointer;">
                             <option value="All">All Services</option>
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="filter-group" style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Service Version</label>
+                        <select id="perf-version-filter" class="filter-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; background: white; cursor: pointer;">
+                            <option value="All">All Versions</option>
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="filter-group" style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Service SKU</label>
+                        <select id="perf-sku-filter" class="filter-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; background: white; cursor: pointer;">
+                            <option value="All">All SKUs</option>
                             <!-- Will be populated dynamically -->
                         </select>
                     </div>
@@ -1801,10 +1829,12 @@ const App = {
                         </div>
                     </div>
                     <div style="overflow-x: auto;">
-                        <table class="data-table" id="performance-detail-table" style="min-width: 1100px;">
+                        <table class="data-table" id="performance-detail-table" style="min-width: 1300px;">
                             <thead>
                                 <tr>
                                     <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Service</th>
+                                    <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Service Version</th>
+                                    <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Service SKU</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">MTD Revenue</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">MTD Target</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Variance</th>
@@ -1834,13 +1864,21 @@ const App = {
                         </div>
                     </div>
                     <div style="overflow-x: auto;">
-                        <table class="data-table" id="daily-data-table" style="min-width: 1200px;">
+                        <table class="data-table" id="daily-data-table" style="min-width: 2000px;">
                             <thead>
                                 <tr>
+                                    <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Business Category</th>
+                                    <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Account</th>
+                                    <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Country</th>
                                     <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Service</th>
+                                    <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Service Version</th>
+                                    <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Currency</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">ZAR Rate</th>
+                                    <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Service SKU</th>
                                     <th style="text-align: center; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Day</th>
                                     <th style="text-align: center; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Date</th>
-                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Daily Revenue</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Daily Billing (LCU)</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Daily Revenue (ZAR)</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Daily Target</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Variance</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Churned Subs</th>
@@ -1870,43 +1908,65 @@ const App = {
         // Check if data exists in localStorage first
         this.loadPerformanceData();
         
-        // If no stored data, generate sample data
+        // If no stored data, generate sample data with multi-currency structure
         if (!STATE.performanceData || !STATE.performanceData.services) {
-            const yogamezDaily = this.generateDailyData(1250000, 1200000, 26, 85000);
-            const mobiDaily = this.generateDailyData(850000, 800000, 26, 69000);
+            // Generate sample data for different deployments
+            const yogamezZWDaily = this.generateDailyData('YoGamezPro', 'Vodacom', 'ZIMBABWE', 'USD', 18.5, 26, 85000);
+            const mobiZADaily = this.generateDailyData('MobiStream', 'MTN', 'SOUTH AFRICA', 'ZAR', 1.0, 26, 69000);
             
-            // Calculate MTD Net Additions for each service
-            const yogamezMtdNetAdds = yogamezDaily.reduce((sum, day) => sum + day.netAdditions, 0);
-            const mobiMtdNetAdds = mobiDaily.reduce((sum, day) => sum + day.netAdditions, 0);
+            // Calculate aggregated MTD values for each service
+            const yogamezMtdRevenue = yogamezZWDaily.reduce((sum, day) => sum + day.revenue, 0);
+            const yogamezMtdTarget = yogamezZWDaily.reduce((sum, day) => sum + day.target, 0);
+            const yogamezMtdNetAdds = yogamezZWDaily.reduce((sum, day) => sum + day.netAdditions, 0);
+            
+            const mobiMtdRevenue = mobiZADaily.reduce((sum, day) => sum + day.revenue, 0);
+            const mobiMtdTarget = mobiZADaily.reduce((sum, day) => sum + day.target, 0);
+            const mobiMtdNetAdds = mobiZADaily.reduce((sum, day) => sum + day.netAdditions, 0);
             
             STATE.performanceData = {
                 services: [
                     {
                         name: 'YoGamezPro',
                         category: 'Content Business',
-                        mtdRevenue: 1250000,
-                        mtdTarget: 1200000,
-                        actualRunRate: 48076,
-                        requiredRunRate: 50000,
-                        subscriberBase: yogamezDaily[yogamezDaily.length - 1].subscriberBase,
+                        account: 'Vodacom',
+                        country: 'ZIMBABWE',
+                        serviceVersion: yogamezZWDaily[0].serviceVersion,
+                        serviceSKU: yogamezZWDaily[0].serviceSKU,
+                        currency: 'USD',
+                        zarRate: 18.5,
+                        mtdRevenue: yogamezMtdRevenue,
+                        mtdTarget: yogamezMtdTarget,
+                        actualRunRate: Math.round(yogamezMtdRevenue / 26),
+                        requiredRunRate: Math.round(yogamezMtdTarget / 26),
+                        subscriberBase: yogamezZWDaily[yogamezZWDaily.length - 1].subscriberBase,
                         mtdNetAdditions: yogamezMtdNetAdds,
-                        dailyData: yogamezDaily
+                        dailyData: yogamezZWDaily
                     },
                     {
                         name: 'MobiStream',
                         category: 'Content Business',
-                        mtdRevenue: 850000,
-                        mtdTarget: 800000,
-                        actualRunRate: 32692,
-                        requiredRunRate: 35000,
-                        subscriberBase: mobiDaily[mobiDaily.length - 1].subscriberBase,
+                        account: 'MTN',
+                        country: 'SOUTH AFRICA',
+                        serviceVersion: mobiZADaily[0].serviceVersion,
+                        serviceSKU: mobiZADaily[0].serviceSKU,
+                        currency: 'ZAR',
+                        zarRate: 1.0,
+                        mtdRevenue: mobiMtdRevenue,
+                        mtdTarget: mobiMtdTarget,
+                        actualRunRate: Math.round(mobiMtdRevenue / 26),
+                        requiredRunRate: Math.round(mobiMtdTarget / 26),
+                        subscriberBase: mobiZADaily[mobiZADaily.length - 1].subscriberBase,
                         mtdNetAdditions: mobiMtdNetAdds,
-                        dailyData: mobiDaily
+                        dailyData: mobiZADaily
                     }
                 ],
                 filters: {
                     category: 'All',
+                    account: 'All',
+                    country: 'All',
                     service: 'All',
+                    serviceVersion: 'All',
+                    serviceSKU: 'All',
                     month: '2025-01'
                 }
             };
@@ -1915,15 +1975,30 @@ const App = {
         }
     },
     
-    generateDailyData(mtdRevenue, mtdTarget, days, initialSubscriberBase = 50000) {
+    generateDailyData(serviceName, account, country, currency, zarRate, days, initialSubscriberBase = 50000) {
         const dailyData = [];
-        const avgDaily = mtdRevenue / days;
-        const variance = avgDaily * 0.15;
+        
+        // Calculate billing in local currency (LCU)
+        // For demo, we'll use a base amount and apply variance
+        const baseDailyBilling = 50000; // Base amount in LCU
+        const baseTarget = 46000;
+        const variance = baseDailyBilling * 0.15;
         
         let currentSubBase = initialSubscriberBase;
         
+        // Generate Service Version and SKU names
+        const accountCode = account.substring(0, 2);
+        const countryCode = this.getCountryCode(country);
+        const serviceVersion = `${serviceName} ${accountCode}${countryCode}`;
+        const serviceSKU = `${serviceVersion} (${currency})`;
+        
         for (let i = 1; i <= days; i++) {
-            const dailyRev = avgDaily + (Math.random() - 0.5) * variance;
+            const dailyBilling = baseDailyBilling + (Math.random() - 0.5) * variance;
+            const dailyTargetLCU = baseTarget + (Math.random() - 0.5) * variance * 0.5;
+            
+            // Calculate ZAR revenue from LCU billing
+            const dailyRevenue = Math.round(dailyBilling * zarRate);
+            const dailyTargetZAR = Math.round(dailyTargetLCU * zarRate);
             
             // Generate subscriber movement data
             const avgChurn = Math.round(currentSubBase * 0.02); // ~2% daily churn
@@ -1938,8 +2013,16 @@ const App = {
             dailyData.push({
                 day: i,
                 date: `2025-01-${String(i).padStart(2, '0')}`,
-                revenue: Math.round(dailyRev),
-                target: Math.round(mtdTarget / days),
+                businessCategory: 'Content Business',
+                account: account,
+                country: country,
+                serviceVersion: serviceVersion,
+                currency: currency,
+                zarRate: zarRate,
+                serviceSKU: serviceSKU,
+                dailyBillingLCU: Math.round(dailyBilling),
+                revenue: dailyRevenue,
+                target: dailyTargetZAR,
                 churnedSubs: churnedSubs,
                 dailyAcquisitions: dailyAcquisitions,
                 netAdditions: netAdditions,
@@ -1949,18 +2032,104 @@ const App = {
         return dailyData;
     },
     
+    getCountryCode(countryName) {
+        // Map country names to 2-letter codes
+        const countryMap = {
+            'ZIMBABWE': 'ZW',
+            'LESOTHO': 'LS',
+            'SOUTH AFRICA': 'ZA',
+            'BOTSWANA': 'BW',
+            'NAMIBIA': 'NA',
+            'ZAMBIA': 'ZM',
+            'MOZAMBIQUE': 'MZ',
+            'TANZANIA, UNITED REPUBLIC OF': 'TZ',
+            'KENYA': 'KE',
+            'UGANDA': 'UG'
+        };
+        return countryMap[countryName] || 'XX';
+    },
+    
     setupPerformanceFilters() {
-        // Populate service filter
-        const serviceFilter = document.getElementById('perf-service-filter');
-        if (serviceFilter && STATE.performanceData) {
+        // Populate all filter options from the data
+        if (STATE.performanceData && STATE.performanceData.services) {
             const services = STATE.performanceData.services;
-            serviceFilter.innerHTML = '<option value="All">All Services</option>';
-            services.forEach(service => {
-                const option = document.createElement('option');
-                option.value = service.name;
-                option.textContent = service.name;
-                serviceFilter.appendChild(option);
-            });
+            
+            // Get unique values for each filter
+            const accounts = [...new Set(services.map(s => s.account))].sort();
+            const countries = [...new Set(services.map(s => s.country))].sort();
+            const serviceNames = [...new Set(services.map(s => s.name))].sort();
+            const versions = [...new Set(services.map(s => s.serviceVersion))].sort();
+            const skus = [...new Set(services.map(s => s.serviceSKU))].sort();
+            
+            // Populate Account filter
+            const accountFilter = document.getElementById('perf-account-filter');
+            if (accountFilter) {
+                accountFilter.innerHTML = '<option value="All">All Accounts</option>';
+                accounts.forEach(account => {
+                    const option = document.createElement('option');
+                    option.value = account;
+                    option.textContent = account;
+                    accountFilter.appendChild(option);
+                });
+            }
+            
+            // Populate Country filter
+            const countryFilter = document.getElementById('perf-country-filter');
+            if (countryFilter) {
+                countryFilter.innerHTML = '<option value="All">All Countries</option>';
+                countries.forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country;
+                    option.textContent = country;
+                    countryFilter.appendChild(option);
+                });
+            }
+            
+            // Populate Service filter
+            const serviceFilter = document.getElementById('perf-service-filter');
+            if (serviceFilter) {
+                serviceFilter.innerHTML = '<option value="All">All Services</option>';
+                serviceNames.forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    serviceFilter.appendChild(option);
+                });
+            }
+            
+            // Populate Service Version filter
+            const versionFilter = document.getElementById('perf-version-filter');
+            if (versionFilter) {
+                versionFilter.innerHTML = '<option value="All">All Versions</option>';
+                versions.forEach(version => {
+                    const option = document.createElement('option');
+                    option.value = version;
+                    option.textContent = version;
+                    versionFilter.appendChild(option);
+                });
+            }
+            
+            // Populate Service SKU filter
+            const skuFilter = document.getElementById('perf-sku-filter');
+            if (skuFilter) {
+                skuFilter.innerHTML = '<option value="All">All SKUs</option>';
+                skus.forEach(sku => {
+                    const option = document.createElement('option');
+                    option.value = sku;
+                    option.textContent = sku;
+                    skuFilter.appendChild(option);
+                });
+            }
+            
+            // Set default filter for Lead users (if applicable)
+            if (STATE.currentUser.type === 'Lead') {
+                const categoryFilter = document.getElementById('perf-category-filter');
+                if (categoryFilter && STATE.currentUser.contentBusiness) {
+                    categoryFilter.value = 'Content Business';
+                } else if (categoryFilter && STATE.currentUser.channelBusiness) {
+                    categoryFilter.value = 'Channel Business';
+                }
+            }
         }
         
         // Show/hide Add Service button based on user type
@@ -2009,7 +2178,11 @@ const App = {
         
         // Attach filter change listeners
         document.getElementById('perf-category-filter')?.addEventListener('change', () => this.renderPerformanceDashboard());
+        document.getElementById('perf-account-filter')?.addEventListener('change', () => this.renderPerformanceDashboard());
+        document.getElementById('perf-country-filter')?.addEventListener('change', () => this.renderPerformanceDashboard());
         document.getElementById('perf-service-filter')?.addEventListener('change', () => this.renderPerformanceDashboard());
+        document.getElementById('perf-version-filter')?.addEventListener('change', () => this.renderPerformanceDashboard());
+        document.getElementById('perf-sku-filter')?.addEventListener('change', () => this.renderPerformanceDashboard());
         document.getElementById('perf-month-filter')?.addEventListener('change', () => this.renderPerformanceDashboard());
         document.getElementById('toggle-target-to-date')?.addEventListener('change', () => this.renderPerformanceDashboard());
         document.getElementById('export-perf-csv')?.addEventListener('click', () => this.exportPerformanceData());
@@ -2056,16 +2229,32 @@ const App = {
         
         // Get filter values
         const categoryFilter = document.getElementById('perf-category-filter')?.value || 'All';
+        const accountFilter = document.getElementById('perf-account-filter')?.value || 'All';
+        const countryFilter = document.getElementById('perf-country-filter')?.value || 'All';
         const serviceFilter = document.getElementById('perf-service-filter')?.value || 'All';
+        const versionFilter = document.getElementById('perf-version-filter')?.value || 'All';
+        const skuFilter = document.getElementById('perf-sku-filter')?.value || 'All';
         const showTargetToDate = document.getElementById('toggle-target-to-date')?.checked || false;
         
-        // Filter services
+        // Filter services based on all criteria
         let filteredServices = STATE.performanceData.services;
         if (categoryFilter !== 'All') {
             filteredServices = filteredServices.filter(s => s.category === categoryFilter);
         }
+        if (accountFilter !== 'All') {
+            filteredServices = filteredServices.filter(s => s.account === accountFilter);
+        }
+        if (countryFilter !== 'All') {
+            filteredServices = filteredServices.filter(s => s.country === countryFilter);
+        }
         if (serviceFilter !== 'All') {
             filteredServices = filteredServices.filter(s => s.name === serviceFilter);
+        }
+        if (versionFilter !== 'All') {
+            filteredServices = filteredServices.filter(s => s.serviceVersion === versionFilter);
+        }
+        if (skuFilter !== 'All') {
+            filteredServices = filteredServices.filter(s => s.serviceSKU === skuFilter);
         }
         
         // Calculate aggregated metrics
@@ -2398,6 +2587,8 @@ const App = {
             return `
                 <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding: 0.75rem; font-weight: 500;">${service.name}</td>
+                    <td style="padding: 0.75rem;">${service.serviceVersion || 'N/A'}</td>
+                    <td style="padding: 0.75rem;">${service.serviceSKU || 'N/A'}</td>
                     <td style="padding: 0.75rem; text-align: right; font-weight: 600;">R ${(service.mtdRevenue / 1000000).toFixed(2)}M</td>
                     <td style="padding: 0.75rem; text-align: right;">R ${(service.mtdTarget / 1000000).toFixed(2)}M</td>
                     <td style="padding: 0.75rem; text-align: right; color: ${varianceColor}; font-weight: 600;">
@@ -2564,9 +2755,17 @@ const App = {
                     
                     rows.push(`
                         <tr style="border-bottom: 1px solid #e5e7eb;">
+                            <td style="padding: 0.75rem;">${day.businessCategory || service.category || 'N/A'}</td>
+                            <td style="padding: 0.75rem;">${day.account || service.account || 'N/A'}</td>
+                            <td style="padding: 0.75rem;">${day.country || service.country || 'N/A'}</td>
                             <td style="padding: 0.75rem; font-weight: 500;">${service.name}</td>
+                            <td style="padding: 0.75rem;">${day.serviceVersion || service.serviceVersion || 'N/A'}</td>
+                            <td style="padding: 0.75rem; text-align: center;">${day.currency || service.currency || 'ZAR'}</td>
+                            <td style="padding: 0.75rem; text-align: right;">${(day.zarRate || service.zarRate || 1).toFixed(2)}</td>
+                            <td style="padding: 0.75rem;">${day.serviceSKU || service.serviceSKU || 'N/A'}</td>
                             <td style="padding: 0.75rem; text-align: center;">${day.day}</td>
                             <td style="padding: 0.75rem; text-align: center;">${day.date}</td>
+                            <td style="padding: 0.75rem; text-align: right;">${(day.dailyBillingLCU || 0).toLocaleString()}</td>
                             <td style="padding: 0.75rem; text-align: right; font-weight: 600;">R ${(day.revenue / 1000).toFixed(1)}K</td>
                             <td style="padding: 0.75rem; text-align: right;">R ${(day.target / 1000).toFixed(1)}K</td>
                             <td style="padding: 0.75rem; text-align: right; color: ${varianceColor}; font-weight: 600;">
@@ -2584,7 +2783,7 @@ const App = {
         });
         
         if (rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 2rem; color: #6b7280;">No daily data available</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="19" style="text-align: center; padding: 2rem; color: #6b7280;">No daily data available</td></tr>';
         } else {
             tbody.innerHTML = rows.join('');
         }
