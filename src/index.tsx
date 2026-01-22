@@ -224,6 +224,10 @@ app.get('*', async (c) => {
                                         <span class="kpi-label">Revenue Today</span>
                                         <span class="kpi-value">Loading...</span>
                                     </div>
+                                    <div class="kpi-item">
+                                        <span class="kpi-label">Net Additions Today</span>
+                                        <span class="kpi-value">Loading...</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -706,7 +706,7 @@ const App = {
             const perfContent = document.getElementById('performance-content');
             if (perfContent) {
                 const kpis = perfContent.querySelectorAll('.kpi-value');
-                if (kpis.length >= 4) {
+                if (kpis.length >= 5) {
                     // Calculate aggregated values from all services
                     const services = STATE.performanceData.services;
                     const totalMtdRevenue = services.reduce((sum, s) => sum + s.mtdRevenue, 0);
@@ -719,11 +719,18 @@ const App = {
                         return sum + (lastDay ? lastDay.revenue : 0);
                     }, 0);
                     
+                    // Get today's net additions (last day from all services)
+                    const todayNetAdditions = services.reduce((sum, s) => {
+                        const lastDay = s.dailyData[s.dailyData.length - 1];
+                        return sum + (lastDay ? lastDay.netAdditions : 0);
+                    }, 0);
+                    
                     // Format values
                     kpis[0].textContent = `R ${(totalMtdRevenue / 1000000).toFixed(1)}M`;
                     kpis[1].textContent = `R ${(totalActualRunRate / 1000).toFixed(0)}K/day`;
                     kpis[2].textContent = `${(totalSubscriberBase / 1000).toFixed(0)}K`;
                     kpis[3].textContent = `R ${(todayRevenue / 1000).toFixed(0)}K`;
+                    kpis[4].textContent = `${(todayNetAdditions / 1000).toFixed(1)}K`;
                 }
             }
         }
@@ -1717,7 +1724,7 @@ const App = {
                 </div>
 
                 <!-- KPI Cards -->
-                <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
                     <div class="kpi-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         <div style="color: #6b7280; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.5rem;">MTD REVENUE</div>
                         <div id="kpi-mtd-revenue" style="font-size: 1.75rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">R 2.1M</div>
@@ -1746,6 +1753,13 @@ const App = {
                             <i class="fas fa-check-circle"></i> <span style="font-weight: 600;">On Track</span>
                         </div>
                     </div>
+                    <div class="kpi-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <div style="color: #6b7280; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.5rem;">NET ADDITIONS TODAY</div>
+                        <div id="kpi-net-additions" style="font-size: 1.75rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">2.5K</div>
+                        <div id="kpi-net-additions-status" style="font-size: 0.875rem; color: #10b981;">
+                            <i class="fas fa-arrow-up"></i> <span style="font-weight: 600;">Growing</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Charts Section -->
@@ -1761,6 +1775,14 @@ const App = {
                         <div class="chart-container">
                             <h3 style="font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 1rem;">Daily Run Rate</h3>
                             <canvas id="runrate-chart" style="max-height: 300px;"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3 style="font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 1rem;">Subscriber Movement</h3>
+                            <canvas id="subscriber-movement-chart" style="max-height: 300px;"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3 style="font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 1rem;">Subscriber Base Trend</h3>
+                            <canvas id="subscriber-base-chart" style="max-height: 300px;"></canvas>
                         </div>
                     </div>
                 </div>
@@ -1779,7 +1801,7 @@ const App = {
                         </div>
                     </div>
                     <div style="overflow-x: auto;">
-                        <table class="data-table" id="performance-detail-table">
+                        <table class="data-table" id="performance-detail-table" style="min-width: 1100px;">
                             <thead>
                                 <tr>
                                     <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Service</th>
@@ -1790,6 +1812,7 @@ const App = {
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Actual Run Rate</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Required Run Rate</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Subscriber Base</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">MTD Net Additions</th>
                                     <th id="perf-actions-header" style="text-align: center; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Actions</th>
                                 </tr>
                             </thead>
@@ -1811,7 +1834,7 @@ const App = {
                         </div>
                     </div>
                     <div style="overflow-x: auto;">
-                        <table class="data-table" id="daily-data-table">
+                        <table class="data-table" id="daily-data-table" style="min-width: 1200px;">
                             <thead>
                                 <tr>
                                     <th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Service</th>
@@ -1820,6 +1843,10 @@ const App = {
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Daily Revenue</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Daily Target</th>
                                     <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Variance</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Churned Subs</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Daily Acquisitions</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Net Additions</th>
+                                    <th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Subscriber Base</th>
                                     <th id="daily-actions-header" style="text-align: center; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Actions</th>
                                 </tr>
                             </thead>
@@ -1845,6 +1872,13 @@ const App = {
         
         // If no stored data, generate sample data
         if (!STATE.performanceData || !STATE.performanceData.services) {
+            const yogamezDaily = this.generateDailyData(1250000, 1200000, 26, 85000);
+            const mobiDaily = this.generateDailyData(850000, 800000, 26, 69000);
+            
+            // Calculate MTD Net Additions for each service
+            const yogamezMtdNetAdds = yogamezDaily.reduce((sum, day) => sum + day.netAdditions, 0);
+            const mobiMtdNetAdds = mobiDaily.reduce((sum, day) => sum + day.netAdditions, 0);
+            
             STATE.performanceData = {
                 services: [
                     {
@@ -1854,8 +1888,9 @@ const App = {
                         mtdTarget: 1200000,
                         actualRunRate: 48076,
                         requiredRunRate: 50000,
-                        subscriberBase: 85000,
-                        dailyData: this.generateDailyData(1250000, 1200000, 26)
+                        subscriberBase: yogamezDaily[yogamezDaily.length - 1].subscriberBase,
+                        mtdNetAdditions: yogamezMtdNetAdds,
+                        dailyData: yogamezDaily
                     },
                     {
                         name: 'MobiStream',
@@ -1864,8 +1899,9 @@ const App = {
                         mtdTarget: 800000,
                         actualRunRate: 32692,
                         requiredRunRate: 35000,
-                        subscriberBase: 69000,
-                        dailyData: this.generateDailyData(850000, 800000, 26)
+                        subscriberBase: mobiDaily[mobiDaily.length - 1].subscriberBase,
+                        mtdNetAdditions: mobiMtdNetAdds,
+                        dailyData: mobiDaily
                     }
                 ],
                 filters: {
@@ -1879,18 +1915,35 @@ const App = {
         }
     },
     
-    generateDailyData(mtdRevenue, mtdTarget, days) {
+    generateDailyData(mtdRevenue, mtdTarget, days, initialSubscriberBase = 50000) {
         const dailyData = [];
         const avgDaily = mtdRevenue / days;
         const variance = avgDaily * 0.15;
         
+        let currentSubBase = initialSubscriberBase;
+        
         for (let i = 1; i <= days; i++) {
             const dailyRev = avgDaily + (Math.random() - 0.5) * variance;
+            
+            // Generate subscriber movement data
+            const avgChurn = Math.round(currentSubBase * 0.02); // ~2% daily churn
+            const churnedSubs = Math.round(avgChurn + (Math.random() - 0.5) * avgChurn * 0.3);
+            
+            const avgAcquisitions = Math.round(avgChurn * 1.05); // Slightly more than churn for growth
+            const dailyAcquisitions = Math.round(avgAcquisitions + (Math.random() - 0.5) * avgAcquisitions * 0.3);
+            
+            const netAdditions = dailyAcquisitions - churnedSubs;
+            currentSubBase += netAdditions;
+            
             dailyData.push({
                 day: i,
                 date: `2025-01-${String(i).padStart(2, '0')}`,
                 revenue: Math.round(dailyRev),
-                target: Math.round(mtdTarget / days)
+                target: Math.round(mtdTarget / days),
+                churnedSubs: churnedSubs,
+                dailyAcquisitions: dailyAcquisitions,
+                netAdditions: netAdditions,
+                subscriberBase: currentSubBase
             });
         }
         return dailyData;
@@ -2021,6 +2074,7 @@ const App = {
         const totalActualRunRate = filteredServices.reduce((sum, s) => sum + s.actualRunRate, 0);
         const totalRequiredRunRate = filteredServices.reduce((sum, s) => sum + s.requiredRunRate, 0);
         const totalSubscriberBase = filteredServices.reduce((sum, s) => sum + s.subscriberBase, 0);
+        const totalMtdNetAdditions = filteredServices.reduce((sum, s) => sum + (s.mtdNetAdditions || 0), 0);
         
         const variance = totalMtdRevenue - totalMtdTarget;
         const variancePercent = ((variance / totalMtdTarget) * 100).toFixed(1);
@@ -2040,10 +2094,30 @@ const App = {
         `;
         
         document.getElementById('kpi-subscriber-base').textContent = `${(totalSubscriberBase / 1000).toFixed(0)}K`;
+        document.getElementById('kpi-subscriber-growth').innerHTML = `
+            <i class="fas fa-arrow-${totalMtdNetAdditions >= 0 ? 'up' : 'down'}"></i> 
+            <span style="font-weight: 600;">${totalMtdNetAdditions >= 0 ? '+' : ''}${(totalMtdNetAdditions / 1000).toFixed(1)}K</span> 
+            this month
+        `;
+        document.getElementById('kpi-subscriber-growth').style.color = totalMtdNetAdditions >= 0 ? '#10b981' : '#ef4444';
         
-        // Get today's revenue (last day in data)
-        const todayRevenue = filteredServices[0]?.dailyData[filteredServices[0].dailyData.length - 1]?.revenue || 0;
+        // Get today's revenue and net additions (last day in data)
+        const todayRevenue = filteredServices.reduce((sum, s) => {
+            const lastDay = s.dailyData[s.dailyData.length - 1];
+            return sum + (lastDay ? lastDay.revenue : 0);
+        }, 0);
+        const todayNetAdditions = filteredServices.reduce((sum, s) => {
+            const lastDay = s.dailyData[s.dailyData.length - 1];
+            return sum + (lastDay ? lastDay.netAdditions : 0);
+        }, 0);
+        
         document.getElementById('kpi-revenue-today').textContent = `R ${(todayRevenue / 1000).toFixed(0)}K`;
+        document.getElementById('kpi-net-additions').textContent = `${(todayNetAdditions / 1000).toFixed(1)}K`;
+        document.getElementById('kpi-net-additions-status').innerHTML = `
+            <i class="fas fa-arrow-${todayNetAdditions >= 0 ? 'up' : 'down'}"></i> 
+            <span style="font-weight: 600;">${todayNetAdditions >= 0 ? 'Growing' : 'Declining'}</span>
+        `;
+        document.getElementById('kpi-net-additions-status').style.color = todayNetAdditions >= 0 ? '#10b981' : '#ef4444';
         
         // Render charts
         this.renderPerformanceCharts(filteredServices, showTargetToDate);
@@ -2176,6 +2250,123 @@ const App = {
                 }
             });
         }
+        
+        // Aggregate subscriber movement data
+        const aggregatedSubscribers = {};
+        services.forEach(service => {
+            service.dailyData.forEach(day => {
+                if (!aggregatedSubscribers[day.date]) {
+                    aggregatedSubscribers[day.date] = { 
+                        churnedSubs: 0, 
+                        dailyAcquisitions: 0, 
+                        netAdditions: 0, 
+                        subscriberBase: 0 
+                    };
+                }
+                aggregatedSubscribers[day.date].churnedSubs += day.churnedSubs || 0;
+                aggregatedSubscribers[day.date].dailyAcquisitions += day.dailyAcquisitions || 0;
+                aggregatedSubscribers[day.date].netAdditions += day.netAdditions || 0;
+                aggregatedSubscribers[day.date].subscriberBase += day.subscriberBase || 0;
+            });
+        });
+        
+        const subscriberDates = Object.keys(aggregatedSubscribers).sort();
+        
+        // Subscriber Movement Chart
+        const subMovementCtx = document.getElementById('subscriber-movement-chart');
+        if (subMovementCtx) {
+            if (window.subscriberMovementChart) window.subscriberMovementChart.destroy();
+            window.subscriberMovementChart = new Chart(subMovementCtx, {
+                type: 'bar',
+                data: {
+                    labels: subscriberDates.map(d => d.substring(8)),
+                    datasets: [{
+                        label: 'Daily Acquisitions',
+                        data: subscriberDates.map(d => aggregatedSubscribers[d].dailyAcquisitions),
+                        backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                        borderColor: '#10b981',
+                        borderWidth: 1
+                    }, {
+                        label: 'Churned Subs',
+                        data: subscriberDates.map(d => -aggregatedSubscribers[d].churnedSubs), // Negative for visual effect
+                        backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                        borderColor: '#ef4444',
+                        borderWidth: 1
+                    }, {
+                        label: 'Net Additions',
+                        data: subscriberDates.map(d => aggregatedSubscribers[d].netAdditions),
+                        type: 'line',
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            ticks: {
+                                callback: value => `${(value / 1000).toFixed(1)}K`
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += Math.abs(context.parsed.y).toLocaleString();
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Subscriber Base Trend Chart
+        const subBaseCtx = document.getElementById('subscriber-base-chart');
+        if (subBaseCtx) {
+            if (window.subscriberBaseChart) window.subscriberBaseChart.destroy();
+            window.subscriberBaseChart = new Chart(subBaseCtx, {
+                type: 'line',
+                data: {
+                    labels: subscriberDates.map(d => d.substring(8)),
+                    datasets: [{
+                        label: 'Subscriber Base',
+                        data: subscriberDates.map(d => aggregatedSubscribers[d].subscriberBase),
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: value => `${(value / 1000).toFixed(0)}K`
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true, position: 'top' }
+                    }
+                }
+            });
+        }
     },
     
     renderPerformanceTable(services) {
@@ -2189,6 +2380,9 @@ const App = {
             const variancePercent = ((variance / service.mtdTarget) * 100).toFixed(1);
             const varianceColor = variance >= 0 ? '#10b981' : '#ef4444';
             const varianceIcon = variance >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+            
+            const mtdNetAdds = service.mtdNetAdditions || 0;
+            const netAddColor = mtdNetAdds >= 0 ? '#10b981' : '#ef4444';
             
             const actionsCell = isAdmin ? `
                 <td style="padding: 0.75rem; text-align: center;">
@@ -2213,6 +2407,7 @@ const App = {
                     <td style="padding: 0.75rem; text-align: right;">R ${(service.actualRunRate / 1000).toFixed(0)}K</td>
                     <td style="padding: 0.75rem; text-align: right;">R ${(service.requiredRunRate / 1000).toFixed(0)}K</td>
                     <td style="padding: 0.75rem; text-align: right;">${(service.subscriberBase / 1000).toFixed(1)}K</td>
+                    <td style="padding: 0.75rem; text-align: right; color: ${netAddColor}; font-weight: 600;">${mtdNetAdds >= 0 ? '+' : ''}${mtdNetAdds.toLocaleString()}</td>
                     ${actionsCell}
                 </tr>
             `;
@@ -2357,6 +2552,8 @@ const App = {
                     const varianceColor = variance >= 0 ? '#10b981' : '#ef4444';
                     const varianceIcon = variance >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
                     
+                    const netAddColor = (day.netAdditions || 0) >= 0 ? '#10b981' : '#ef4444';
+                    
                     const actionsCell = isAdmin ? `
                         <td style="padding: 0.75rem; text-align: center;">
                             <button class="btn-icon" onclick="App.editDailyData(${serviceIndex}, ${dayIndex})" title="Edit">
@@ -2375,6 +2572,10 @@ const App = {
                             <td style="padding: 0.75rem; text-align: right; color: ${varianceColor}; font-weight: 600;">
                                 <i class="fas ${varianceIcon}"></i> R ${Math.abs(variance / 1000).toFixed(1)}K
                             </td>
+                            <td style="padding: 0.75rem; text-align: right;">${(day.churnedSubs || 0).toLocaleString()}</td>
+                            <td style="padding: 0.75rem; text-align: right;">${(day.dailyAcquisitions || 0).toLocaleString()}</td>
+                            <td style="padding: 0.75rem; text-align: right; color: ${netAddColor}; font-weight: 600;">${(day.netAdditions >= 0 ? '+' : '')}${(day.netAdditions || 0).toLocaleString()}</td>
+                            <td style="padding: 0.75rem; text-align: right; font-weight: 600;">${(day.subscriberBase || 0).toLocaleString()}</td>
                             ${actionsCell}
                         </tr>
                     `);
@@ -2383,7 +2584,7 @@ const App = {
         });
         
         if (rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">No daily data available</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 2rem; color: #6b7280;">No daily data available</td></tr>';
         } else {
             tbody.innerHTML = rows.join('');
         }
