@@ -2952,7 +2952,7 @@ const App = {
         this.showPerformanceServiceModal(serviceIndex);
     },
     
-    deletePerformanceService(serviceIndex) {
+    async deletePerformanceService(serviceIndex) {
         if (STATE.currentUser.type !== 'Admin') {
             alert('Only Admins can delete services');
             return;
@@ -2962,11 +2962,30 @@ const App = {
         if (!service) return;
         
         if (confirm(`Are you sure you want to delete "${service.name}"?`)) {
-            STATE.performanceData.services.splice(serviceIndex, 1);
-            this.savePerformanceData();
-            console.log('Deleted service:', service.name);
-            this.renderPerformanceDashboard();
-            this.setupPerformanceFilters(); // Refresh service dropdown
+            try {
+                // Delete from D1 database first
+                if (service.id) {
+                    const response = await fetch(`/api/services/${service.id}`, {
+                        method: 'DELETE'
+                    });
+                    const result = await response.json();
+                    if (!result.success) {
+                        throw new Error(result.error || 'Failed to delete from database');
+                    }
+                    console.log('✅ Deleted service from D1 database:', service.name);
+                }
+                
+                // Remove from local state
+                STATE.performanceData.services.splice(serviceIndex, 1);
+                console.log('✅ Removed service from local state:', service.name);
+                
+                // Refresh UI
+                this.renderPerformanceDashboard();
+                this.setupPerformanceFilters(); // Refresh service dropdown
+            } catch (error) {
+                console.error('❌ Failed to delete service:', error);
+                alert('Failed to delete service: ' + error.message);
+            }
         }
     },
     
