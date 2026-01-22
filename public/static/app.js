@@ -2313,7 +2313,15 @@ const App = {
         const isCurrentMonth = (filterYear === currentYear && filterMonth === currentMonth);
         
         // Create month-filtered versions of services with recalculated metrics
+        // IMPORTANT: Preserve original service index for edit/delete operations
         const monthFilteredServices = filteredServices.map(service => {
+            // Find the original index in the full services array
+            const originalIndex = STATE.performanceData.services.findIndex(s => 
+                s.name === service.name && 
+                s.serviceVersion === service.serviceVersion && 
+                s.serviceSKU === service.serviceSKU
+            );
+            
             // Filter daily data to only include selected month
             let monthDailyData = service.dailyData.filter(day => day.date.startsWith(monthPrefix));
             
@@ -2335,6 +2343,7 @@ const App = {
             
             return {
                 ...service,
+                originalIndex: originalIndex,  // Store original index for edit/delete operations
                 dailyData: monthDailyData,
                 mtdRevenue,
                 mtdTarget,
@@ -2666,6 +2675,9 @@ const App = {
         const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
         
         tbody.innerHTML = services.map((service, index) => {
+            // Use originalIndex if available (for filtered views), otherwise use index
+            const serviceIndex = service.originalIndex !== undefined ? service.originalIndex : index;
+            
             // Calculate Full Month Target = Required Run Rate × Days in Month
             const fullMonthTarget = service.requiredRunRate * daysInMonth;
             
@@ -2679,10 +2691,10 @@ const App = {
             
             const actionsCell = isAdmin ? `
                 <td style="padding: 0.75rem; text-align: center;">
-                    <button class="btn-icon" onclick="App.editPerformanceService(${index})" title="Edit">
+                    <button class="btn-icon" onclick="App.editPerformanceService(${serviceIndex})" title="Edit">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn-icon btn-danger" onclick="App.deletePerformanceService(${index})" title="Delete">
+                    <button class="btn-icon btn-danger" onclick="App.deletePerformanceService(${serviceIndex})" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -3056,7 +3068,10 @@ const App = {
         const rows = [];
         
         // Flatten all daily data from all services
-        services.forEach((service, serviceIndex) => {
+        services.forEach((service, index) => {
+            // Use originalIndex if available (for filtered views), otherwise use index
+            const serviceIndex = service.originalIndex !== undefined ? service.originalIndex : index;
+            
             if (service.dailyData && service.dailyData.length > 0) {
                 service.dailyData.forEach((day, dayIndex) => {
                     const variance = day.revenue - day.target;
