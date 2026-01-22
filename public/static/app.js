@@ -2338,8 +2338,7 @@ const App = {
             const mtdTarget = monthDailyData.reduce((sum, day) => sum + day.target, 0);
             const mtdNetAdditions = monthDailyData.reduce((sum, day) => sum + (day.netAdditions || 0), 0);
             const actualRunRate = monthDailyData.length > 0 ? Math.round(mtdRevenue / monthDailyData.length) : 0;
-            // Note: requiredRunRate comes from Add/Edit Service modal, NOT recalculated from daily targets
-            const requiredRunRate = service.requiredRunRate || 0;  // Use stored value
+            const requiredRunRate = monthDailyData.length > 0 ? Math.round(mtdTarget / monthDailyData.length) : 0;
             const subscriberBase = monthDailyData.length > 0 ? monthDailyData[monthDailyData.length - 1].subscriberBase : service.subscriberBase;
             
             return {
@@ -3671,8 +3670,7 @@ const App = {
                 service.mtdRevenue = totalRevenue;
                 service.mtdTarget = totalTarget;
                 service.actualRunRate = Math.round(totalRevenue / service.dailyData.length);
-                // Note: requiredRunRate is maintained from Add/Edit Service modal, NOT recalculated
-                // Do NOT recalculate: service.requiredRunRate = Math.round(totalTarget / service.dailyData.length);
+                service.requiredRunRate = Math.round(totalTarget / service.dailyData.length);
                 
                 // Recalculate MTD Net Additions
                 service.mtdNetAdditions = service.dailyData.reduce((sum, day) => sum + (day.netAdditions || 0), 0);
