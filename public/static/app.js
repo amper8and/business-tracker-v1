@@ -1739,7 +1739,6 @@ const App = {
                         <select id="perf-month-filter" class="filter-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; background: white; cursor: pointer;">
                             <option value="2025-01">January 2025</option>
                             <option value="2024-12">December 2024</option>
-                            <option value="2024-11">November 2024</option>
                         </select>
                     </div>
                     <div class="filter-group" style="flex: 0; min-width: auto;">
@@ -2217,6 +2216,10 @@ const App = {
         // Bulk edit filters
         document.getElementById('bulk-edit-month')?.addEventListener('change', () => this.renderBulkEditTable());
         document.getElementById('bulk-edit-service')?.addEventListener('change', () => this.renderBulkEditTable());
+        
+        // SKU management buttons
+        document.getElementById('add-sku-btn')?.addEventListener('click', () => this.addSKUToBulkEdit());
+        document.getElementById('duplicate-sku-btn')?.addEventListener('click', () => this.duplicateSelectedSKU());
     },
     
     renderPerformanceDashboard() {
@@ -2952,6 +2955,7 @@ const App = {
         const selectedMonth = document.getElementById('bulk-edit-month').value;
         const selectedService = document.getElementById('bulk-edit-service').value;
         const tbody = document.getElementById('bulk-edit-tbody');
+        const infoSpan = document.getElementById('bulk-edit-info');
         
         if (!tbody) return;
         
@@ -2982,10 +2986,14 @@ const App = {
             });
         }
         
+        let skuCount = 0;
+        
         servicesToShow.forEach((service) => {
             const actualServiceIndex = selectedService === 'all' 
                 ? STATE.performanceData.services.indexOf(service) 
                 : parseInt(selectedService);
+            
+            skuCount++; // Count each service as a SKU
             
             // Show only days up to daysToShow
             for (let i = 0; i < Math.min(daysToShow, service.dailyData.length); i++) {
@@ -3008,8 +3016,18 @@ const App = {
                 }
                 currencySelectHtml += '</select>';
                 
+                // Add delete button only on first row of each SKU
+                const actionsCell = i === 0 ? `
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; text-align: center;" rowspan="${Math.min(daysToShow, service.dailyData.length)}">
+                        <button class="btn-icon btn-danger" onclick="App.deleteSKUFromBulkEdit(${actualServiceIndex})" title="Delete SKU">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                ` : '';
+                
                 rows.push(`
                     <tr data-service-idx="${actualServiceIndex}" data-day-idx="${i}">
+                        ${i === 0 ? `<td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; font-weight: 600; vertical-align: top;" rowspan="${Math.min(daysToShow, service.dailyData.length)}">${service.serviceSKU || 'N/A'}</td>` : ''}
                         <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
                             <select class="bulk-edit-category" data-service-idx="${actualServiceIndex}" data-day-idx="${i}" style="width: 150px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
                                 <option value="Content Business" ${(day.businessCategory || service.category) === 'Content Business' ? 'selected' : ''}>Content Business</option>
@@ -3034,7 +3052,6 @@ const App = {
                                    placeholder="Country"
                                    style="width: 120px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
                         </td>
-                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; font-weight: 500;">${service.name}</td>
                         <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
                             ${currencySelectHtml}
                         </td>
@@ -3099,6 +3116,7 @@ const App = {
                         <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; color: ${varianceColor}; font-weight: 600; text-align: right;">
                             ${variance >= 0 ? '+' : ''}R ${(variance / 1000).toFixed(0)}K (${variancePercent}%)
                         </td>
+                        ${actionsCell}
                     </tr>
                 `);
             }
@@ -3106,7 +3124,12 @@ const App = {
         
         tbody.innerHTML = rows.length > 0 
             ? rows.join('') 
-            : '<tr><td colspan="16" style="text-align: center; padding: 2rem; color: #6b7280;">No data available</td></tr>';
+            : '<tr><td colspan="17" style="text-align: center; padding: 2rem; color: #6b7280;">No data available</td></tr>';
+        
+        // Update SKU count info
+        if (infoSpan) {
+            infoSpan.textContent = `${skuCount} SKU${skuCount !== 1 ? 's' : ''} loaded`;
+        }
     },
     
     saveBulkDailyData() {
@@ -3292,6 +3315,74 @@ const App = {
         } else {
             alert('No changes detected');
         }
+    },
+    
+    addSKUToBulkEdit() {
+        // Get selected service
+        const selectedService = document.getElementById('bulk-edit-service').value;
+        if (selectedService === 'all') {
+            alert('Please select a specific service to add a new SKU');
+            return;
+        }
+        
+        const service = STATE.performanceData.services[parseInt(selectedService)];
+        if (!service) {
+            alert('Service not found');
+            return;
+        }
+        
+        // Create a duplicate SKU with modified name
+        const skuCount = STATE.performanceData.services.filter(s => s.name === service.name).length;
+        const newSKUSuffix = String.fromCharCode(65 + skuCount); // A, B, C, etc.
+        
+        const newService = JSON.parse(JSON.stringify(service)); // Deep clone
+        newService.serviceSKU = `${service.serviceSKU}-${newSKUSuffix}`;
+        newService.serviceVersion = `${service.serviceVersion}-${newSKUSuffix}`;
+        
+        // Add to services array
+        STATE.performanceData.services.push(newService);
+        this.savePerformanceData();
+        
+        // Refresh bulk edit table and filters
+        this.renderBulkEditTable();
+        this.setupPerformanceFilters();
+        
+        console.log('Added new SKU:', newService.serviceSKU);
+    },
+    
+    duplicateSelectedSKU() {
+        const selectedService = document.getElementById('bulk-edit-service').value;
+        if (selectedService === 'all') {
+            alert('Please select a specific service/SKU to duplicate');
+            return;
+        }
+        
+        this.addSKUToBulkEdit();
+    },
+    
+    deleteSKUFromBulkEdit(serviceIndex) {
+        if (!confirm('Are you sure you want to delete this SKU? This will remove all its daily data.')) {
+            return;
+        }
+        
+        if (STATE.performanceData.services.length <= 1) {
+            alert('Cannot delete the last SKU. At least one SKU must remain.');
+            return;
+        }
+        
+        const service = STATE.performanceData.services[serviceIndex];
+        console.log('Deleting SKU:', service.serviceSKU);
+        
+        // Remove from services array
+        STATE.performanceData.services.splice(serviceIndex, 1);
+        this.savePerformanceData();
+        
+        // Refresh bulk edit table, filters, and dashboard
+        this.renderBulkEditTable();
+        this.setupPerformanceFilters();
+        this.renderPerformanceDashboard();
+        
+        alert(`SKU "${service.serviceSKU}" has been deleted`);
     },
     
     // Kanban View

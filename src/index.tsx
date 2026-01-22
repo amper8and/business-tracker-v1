@@ -876,7 +876,6 @@ app.get('*', async (c) => {
                         <select id="bulk-edit-month" class="filter-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem;">
                             <option value="2025-01">January 2025</option>
                             <option value="2024-12">December 2024</option>
-                            <option value="2024-11">November 2024</option>
                         </select>
                     </div>
                     <div class="filter-group" style="flex: 1; min-width: 200px;">
@@ -888,14 +887,14 @@ app.get('*', async (c) => {
                 </div>
 
                 <!-- Editable Data Table -->
-                <div style="overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+                <div style="overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1.5rem;">
                     <table class="data-table" id="bulk-edit-table" style="width: 100%; min-width: 2200px;">
                         <thead style="background: #f9fafb;">
                             <tr>
+                                <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Service SKU</th>
                                 <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Business Category</th>
                                 <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Account</th>
                                 <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Country</th>
-                                <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Service</th>
                                 <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Currency</th>
                                 <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">ZAR Rate</th>
                                 <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Day</th>
@@ -908,12 +907,30 @@ app.get('*', async (c) => {
                                 <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Net Additions</th>
                                 <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Subscriber Base</th>
                                 <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Variance</th>
+                                <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e5e7eb; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="bulk-edit-tbody">
                             <!-- Will be populated dynamically -->
                         </tbody>
                     </table>
+                </div>
+                
+                <!-- SKU Management Section -->
+                <div style="background: #f9fafb; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <h3 style="margin: 0 0 1rem 0; font-size: 0.95rem; font-weight: 600; color: #374151;">SKU Management</h3>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button id="add-sku-btn" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                            <i class="fas fa-plus"></i> Add SKU
+                        </button>
+                        <button id="duplicate-sku-btn" class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                            <i class="fas fa-copy"></i> Duplicate Selected SKU
+                        </button>
+                        <div style="flex: 1;"></div>
+                        <span id="bulk-edit-info" style="color: #6b7280; font-size: 0.875rem; padding: 0.5rem;">
+                            <!-- SKU count will be shown here -->
+                        </span>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
