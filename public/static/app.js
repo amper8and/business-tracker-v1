@@ -2999,9 +2999,46 @@ const App = {
             
             skuCount++; // Count each service as a SKU
             
-            // Show only days up to daysToShow
-            for (let i = 0; i < Math.min(daysToShow, service.dailyData.length); i++) {
-                const day = service.dailyData[i];
+            // Filter daily data to match selected month, or create empty entries
+            let monthDailyData = [];
+            
+            for (let dayNum = 1; dayNum <= daysToShow; dayNum++) {
+                const expectedDate = `${year}-${String(month).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                
+                // Try to find existing data for this date
+                const existingDay = service.dailyData.find(d => d.date === expectedDate);
+                
+                if (existingDay) {
+                    // Use existing data
+                    monthDailyData.push({ ...existingDay, dayIndex: service.dailyData.indexOf(existingDay) });
+                } else {
+                    // Create empty entry for this date
+                    monthDailyData.push({
+                        day: dayNum,
+                        date: expectedDate,
+                        businessCategory: service.category || 'Content Business',
+                        account: service.account || '',
+                        country: service.country || '',
+                        serviceVersion: service.serviceVersion || '',
+                        currency: service.currency || 'ZAR',
+                        zarRate: service.zarRate || 1.0,
+                        serviceSKU: service.serviceSKU || '',
+                        dailyBillingLCU: 0,
+                        revenue: 0,
+                        target: 0,
+                        churnedSubs: 0,
+                        dailyAcquisitions: 0,
+                        netAdditions: 0,
+                        subscriberBase: 0,
+                        dayIndex: -1 // Indicates this is a new entry
+                    });
+                }
+            }
+            
+            // Render rows for this service/SKU
+            for (let i = 0; i < monthDailyData.length; i++) {
+                const day = monthDailyData[i];
+                const dayIndex = day.dayIndex >= 0 ? day.dayIndex : service.dailyData.length; // Use existing index or append index
                 const variance = day.revenue - day.target;
                 const variancePercent = day.target > 0 ? ((variance / day.target) * 100).toFixed(1) : 0;
                 const varianceColor = variance >= 0 ? '#10b981' : '#ef4444';
@@ -3010,7 +3047,7 @@ const App = {
                 const netAddColor = netAdditions >= 0 ? '#10b981' : '#ef4444';
                 
                 // Build currency dropdown with current value selected
-                let currencySelectHtml = `<select class="bulk-edit-currency" data-service-idx="${actualServiceIndex}" data-day-idx="${i}" style="width: 80px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">`;
+                let currencySelectHtml = `<select class="bulk-edit-currency" data-service-idx="${actualServiceIndex}" data-day-idx="${dayIndex}" style="width: 80px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">`;
                 currencySelectHtml += '<option value="">Select</option>';
                 if (typeof CURRENCIES !== 'undefined') {
                     CURRENCIES.forEach(curr => {
@@ -3022,7 +3059,7 @@ const App = {
                 
                 // Add delete button only on first row of each SKU
                 const actionsCell = i === 0 ? `
-                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; text-align: center;" rowspan="${Math.min(daysToShow, service.dailyData.length)}">
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; text-align: center;" rowspan="${monthDailyData.length}">
                         <button class="btn-icon btn-danger" onclick="App.deleteSKUFromBulkEdit(${actualServiceIndex})" title="Delete SKU">
                             <i class="fas fa-trash"></i>
                         </button>
@@ -3030,10 +3067,10 @@ const App = {
                 ` : '';
                 
                 rows.push(`
-                    <tr data-service-idx="${actualServiceIndex}" data-day-idx="${i}">
-                        ${i === 0 ? `<td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; font-weight: 600; vertical-align: top;" rowspan="${Math.min(daysToShow, service.dailyData.length)}">${service.serviceSKU || 'N/A'}</td>` : ''}
+                    <tr data-service-idx="${actualServiceIndex}" data-day-idx="${dayIndex}">
+                        ${i === 0 ? `<td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; font-weight: 600; vertical-align: top;" rowspan="${monthDailyData.length}">${service.serviceSKU || 'N/A'}</td>` : ''}
                         <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
-                            <select class="bulk-edit-category" data-service-idx="${actualServiceIndex}" data-day-idx="${i}" style="width: 150px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                            <select class="bulk-edit-category" data-service-idx="${actualServiceIndex}" data-day-idx="${dayIndex}" style="width: 150px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
                                 <option value="Content Business" ${(day.businessCategory || service.category) === 'Content Business' ? 'selected' : ''}>Content Business</option>
                                 <option value="Channel Business" ${(day.businessCategory || service.category) === 'Channel Business' ? 'selected' : ''}>Channel Business</option>
                             </select>
@@ -3042,7 +3079,7 @@ const App = {
                             <input type="text" 
                                    class="bulk-edit-account" 
                                    data-service-idx="${actualServiceIndex}" 
-                                   data-day-idx="${i}"
+                                   data-day-idx="${dayIndex}"
                                    value="${day.account || service.account || ''}" 
                                    placeholder="Account"
                                    style="width: 120px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
@@ -3051,7 +3088,7 @@ const App = {
                             <input type="text" 
                                    class="bulk-edit-country" 
                                    data-service-idx="${actualServiceIndex}" 
-                                   data-day-idx="${i}"
+                                   data-day-idx="${dayIndex}"
                                    value="${day.country || service.country || ''}" 
                                    placeholder="Country"
                                    style="width: 120px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
@@ -3063,7 +3100,7 @@ const App = {
                             <input type="number" 
                                    class="bulk-edit-zarrate" 
                                    data-service-idx="${actualServiceIndex}" 
-                                   data-day-idx="${i}"
+                                   data-day-idx="${dayIndex}"
                                    value="${day.zarRate || service.zarRate || 1.0}" 
                                    step="0.01"
                                    min="0.01"
@@ -3075,7 +3112,7 @@ const App = {
                             <input type="number" 
                                    class="bulk-edit-billing-lcu" 
                                    data-service-idx="${actualServiceIndex}" 
-                                   data-day-idx="${i}"
+                                   data-day-idx="${dayIndex}"
                                    value="${day.dailyBillingLCU || 0}" 
                                    style="width: 120px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
                         </td>
@@ -3086,7 +3123,7 @@ const App = {
                             <input type="number" 
                                    class="bulk-edit-target" 
                                    data-service-idx="${actualServiceIndex}" 
-                                   data-day-idx="${i}"
+                                   data-day-idx="${dayIndex}"
                                    value="${day.target}" 
                                    style="width: 120px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
                         </td>
@@ -3094,7 +3131,7 @@ const App = {
                             <input type="number" 
                                    class="bulk-edit-churned" 
                                    data-service-idx="${actualServiceIndex}" 
-                                   data-day-idx="${i}"
+                                   data-day-idx="${dayIndex}"
                                    value="${day.churnedSubs || 0}" 
                                    style="width: 100px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
                         </td>
@@ -3102,7 +3139,7 @@ const App = {
                             <input type="number" 
                                    class="bulk-edit-acquisitions" 
                                    data-service-idx="${actualServiceIndex}" 
-                                   data-day-idx="${i}"
+                                   data-day-idx="${dayIndex}"
                                    value="${day.dailyAcquisitions || 0}" 
                                    style="width: 100px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
                         </td>
@@ -3110,7 +3147,7 @@ const App = {
                             <input type="number" 
                                    class="bulk-edit-netadds" 
                                    data-service-idx="${actualServiceIndex}" 
-                                   data-day-idx="${i}"
+                                   data-day-idx="${dayIndex}"
                                    value="${netAdditions}" 
                                    style="width: 100px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
                         </td>
@@ -3151,14 +3188,50 @@ const App = {
         
         let hasChanges = false;
         
+        // Helper function to ensure dailyData entry exists at the given index
+        const ensureDailyDataEntry = (serviceIdx, dayIdx) => {
+            const service = STATE.performanceData.services[serviceIdx];
+            if (!service) return null;
+            
+            // If dayIdx is beyond current array, we need to add the entry
+            while (service.dailyData.length <= dayIdx) {
+                // Get the selected month to generate correct date
+                const selectedMonth = document.getElementById('bulk-edit-month').value;
+                const [year, month] = selectedMonth.split('-').map(Number);
+                const dayNum = service.dailyData.length + 1;
+                
+                service.dailyData.push({
+                    day: dayNum,
+                    date: `${year}-${String(month).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`,
+                    businessCategory: service.category || 'Content Business',
+                    account: service.account || '',
+                    country: service.country || '',
+                    serviceVersion: service.serviceVersion || '',
+                    currency: service.currency || 'ZAR',
+                    zarRate: service.zarRate || 1.0,
+                    serviceSKU: service.serviceSKU || '',
+                    dailyBillingLCU: 0,
+                    revenue: 0,
+                    target: 0,
+                    churnedSubs: 0,
+                    dailyAcquisitions: 0,
+                    netAdditions: 0,
+                    subscriberBase: service.subscriberBase || 0
+                });
+            }
+            
+            return service.dailyData[dayIdx];
+        };
+        
         // Update business category
         categoryInputs.forEach(input => {
             const serviceIdx = parseInt(input.dataset.serviceIdx);
             const dayIdx = parseInt(input.dataset.dayIdx);
             const newCategory = input.value;
             
-            if (newCategory && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
-                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].businessCategory = newCategory;
+            const dayData = ensureDailyDataEntry(serviceIdx, dayIdx);
+            if (newCategory && dayData) {
+                dayData.businessCategory = newCategory;
                 hasChanges = true;
             }
         });
@@ -3169,8 +3242,9 @@ const App = {
             const dayIdx = parseInt(input.dataset.dayIdx);
             const newAccount = input.value.trim();
             
-            if (newAccount && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
-                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].account = newAccount;
+            const dayData = ensureDailyDataEntry(serviceIdx, dayIdx);
+            if (newAccount && dayData) {
+                dayData.account = newAccount;
                 STATE.performanceData.services[serviceIdx].account = newAccount; // Update service level too
                 hasChanges = true;
             }
@@ -3182,8 +3256,9 @@ const App = {
             const dayIdx = parseInt(input.dataset.dayIdx);
             const newCountry = input.value.trim();
             
-            if (newCountry && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
-                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].country = newCountry;
+            const dayData = ensureDailyDataEntry(serviceIdx, dayIdx);
+            if (newCountry && dayData) {
+                dayData.country = newCountry;
                 STATE.performanceData.services[serviceIdx].country = newCountry; // Update service level too
                 hasChanges = true;
             }
@@ -3195,8 +3270,9 @@ const App = {
             const dayIdx = parseInt(input.dataset.dayIdx);
             const newCurrency = input.value;
             
-            if (newCurrency && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
-                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].currency = newCurrency;
+            const dayData = ensureDailyDataEntry(serviceIdx, dayIdx);
+            if (newCurrency && dayData) {
+                dayData.currency = newCurrency;
                 STATE.performanceData.services[serviceIdx].currency = newCurrency; // Update service level too
                 hasChanges = true;
             }
@@ -3208,8 +3284,9 @@ const App = {
             const dayIdx = parseInt(input.dataset.dayIdx);
             const newZarRate = parseFloat(input.value);
             
-            if (!isNaN(newZarRate) && newZarRate > 0 && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
-                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].zarRate = newZarRate;
+            const dayData = ensureDailyDataEntry(serviceIdx, dayIdx);
+            if (!isNaN(newZarRate) && newZarRate > 0 && dayData) {
+                dayData.zarRate = newZarRate;
                 STATE.performanceData.services[serviceIdx].zarRate = newZarRate; // Update service level too
                 hasChanges = true;
             }
@@ -3221,12 +3298,12 @@ const App = {
             const dayIdx = parseInt(input.dataset.dayIdx);
             const newBillingLCU = parseInt(input.value);
             
-            if (!isNaN(newBillingLCU) && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
-                const day = STATE.performanceData.services[serviceIdx].dailyData[dayIdx];
-                day.dailyBillingLCU = newBillingLCU;
+            const dayData = ensureDailyDataEntry(serviceIdx, dayIdx);
+            if (!isNaN(newBillingLCU) && dayData) {
+                dayData.dailyBillingLCU = newBillingLCU;
                 // Recalculate revenue: Daily Revenue = Daily Billing (LCU) × ZAR Rate
-                const zarRate = day.zarRate || STATE.performanceData.services[serviceIdx].zarRate || 1.0;
-                day.revenue = Math.round(newBillingLCU * zarRate);
+                const zarRate = dayData.zarRate || STATE.performanceData.services[serviceIdx].zarRate || 1.0;
+                dayData.revenue = Math.round(newBillingLCU * zarRate);
                 hasChanges = true;
             }
         });
@@ -3236,8 +3313,9 @@ const App = {
             const dayIdx = parseInt(input.dataset.dayIdx);
             const newTarget = parseInt(input.value);
             
-            if (!isNaN(newTarget) && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
-                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].target = newTarget;
+            const dayData = ensureDailyDataEntry(serviceIdx, dayIdx);
+            if (!isNaN(newTarget) && dayData) {
+                dayData.target = newTarget;
                 hasChanges = true;
             }
         });
@@ -3247,8 +3325,9 @@ const App = {
             const dayIdx = parseInt(input.dataset.dayIdx);
             const newChurned = parseInt(input.value);
             
-            if (!isNaN(newChurned) && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
-                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].churnedSubs = newChurned;
+            const dayData = ensureDailyDataEntry(serviceIdx, dayIdx);
+            if (!isNaN(newChurned) && dayData) {
+                dayData.churnedSubs = newChurned;
                 hasChanges = true;
             }
         });
@@ -3258,8 +3337,9 @@ const App = {
             const dayIdx = parseInt(input.dataset.dayIdx);
             const newAcquisitions = parseInt(input.value);
             
-            if (!isNaN(newAcquisitions) && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
-                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].dailyAcquisitions = newAcquisitions;
+            const dayData = ensureDailyDataEntry(serviceIdx, dayIdx);
+            if (!isNaN(newAcquisitions) && dayData) {
+                dayData.dailyAcquisitions = newAcquisitions;
                 hasChanges = true;
             }
         });
@@ -3269,8 +3349,9 @@ const App = {
             const dayIdx = parseInt(input.dataset.dayIdx);
             const newNetAdds = parseInt(input.value);
             
-            if (!isNaN(newNetAdds) && STATE.performanceData.services[serviceIdx]?.dailyData[dayIdx]) {
-                STATE.performanceData.services[serviceIdx].dailyData[dayIdx].netAdditions = newNetAdds;
+            const dayData = ensureDailyDataEntry(serviceIdx, dayIdx);
+            if (!isNaN(newNetAdds) && dayData) {
+                dayData.netAdditions = newNetAdds;
                 hasChanges = true;
             }
         });
