@@ -396,8 +396,8 @@ const App = {
         // Load kanban data
         await this.loadKanbanData();
         
-        // Load performance data (placeholder)
-        this.loadPerformanceData();
+        // Load performance data from D1 database
+        await this.loadPerformanceData();
     },
     
     async loadMasteryData() {
@@ -1676,7 +1676,7 @@ const App = {
         this.loadPerformanceDashboard();
     },
     
-    loadPerformanceDashboard() {
+    async loadPerformanceDashboard() {
         console.log('loadPerformanceDashboard() called');
         const container = document.getElementById('performance-dashboard-container');
         if (!container) {
@@ -1684,8 +1684,8 @@ const App = {
             return;
         }
         
-        // Generate sample performance data
-        this.generatePerformanceData();
+        // Load data from D1 database
+        await this.generatePerformanceData();
         
         container.innerHTML = `
             <div class="performance-dashboard">
@@ -1903,24 +1903,13 @@ const App = {
         setTimeout(() => this.renderPerformanceDashboard(), 100);
     },
     
-    generatePerformanceData() {
-        // Check if data exists in localStorage first
-        this.loadPerformanceData();
+    async generatePerformanceData() {
+        // Check if data exists in D1 database first
+        await this.loadPerformanceData();
         
-        // Check if system has been initialized (data version flag)
-        const dataVersion = localStorage.getItem('drumtree_data_version');
-        
-        // If data exists but no version flag, set the version flag (backward compatibility)
-        if (STATE.performanceData && STATE.performanceData.services && STATE.performanceData.services.length > 0 && !dataVersion) {
-            localStorage.setItem('drumtree_data_version', '1.0');
-            console.log('Set data version flag for existing data');
-            return; // Don't regenerate
-        }
-        
-        // If no stored data AND system has never been initialized, generate initial sample data
-        // Once initialized, this will NEVER regenerate data automatically
-        if ((!STATE.performanceData || !STATE.performanceData.services || STATE.performanceData.services.length === 0) && !dataVersion) {
-            console.log('Initializing system with sample data (first time only)...');
+        // If no data in database, generate sample data
+        if (!STATE.performanceData || !STATE.performanceData.services || STATE.performanceData.services.length === 0) {
+            console.log('No data in database - generating sample data...');
             
             // Get current date to determine how many days to generate for current month
             const today = new Date();
@@ -2981,19 +2970,155 @@ const App = {
         }
     },
     
-    savePerformanceData() {
-        localStorage.setItem('performanceData', JSON.stringify(STATE.performanceData));
-        // Set data version flag to indicate system has been initialized
-        // This prevents automatic regeneration of sample data
-        localStorage.setItem('drumtree_data_version', '1.0');
-        console.log('Saved performance data to localStorage');
+    async savePerformanceData() {
+        console.log('🔄 Saving data to Cloudflare D1 database...');
+        
+        try {
+            // Save each service to D1 database
+            for (const service of STATE.performanceData.services) {
+                const serviceData = {
+                    name: service.name,
+                    category: service.category,
+                    account: service.account,
+                    country: service.country,
+                    serviceVersion: service.serviceVersion,
+                    serviceSKU: service.serviceSKU,
+                    currency: service.currency,
+                    zarRate: service.zarRate,
+                    mtdRevenue: service.mtdRevenue || 0,
+                    mtdTarget: service.mtdTarget || 0,
+                    actualRunRate: service.actualRunRate || 0,
+                    requiredRunRate: service.requiredRunRate,
+                    subscriberBase: service.subscriberBase || 0,
+                    mtdNetAdditions: service.mtdNetAdditions || 0
+                };
+                
+                let serviceId;
+                if (service.id) {
+                    // Update existing
+                    await fetch(`/api/services/${service.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(serviceData)
+                    });
+                    serviceId = service.id;
+                } else {
+                    // Create new
+                    const response = await fetch('/api/services', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(serviceData)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        service.id = result.data.id;
+                        serviceId = result.data.id;
+                    }
+                }
+                
+                // Save daily data
+                if (service.dailyData && service.dailyData.length > 0) {
+                    const dailyDataArray = service.dailyData.map(day => ({
+                        serviceId: serviceId,
+                        day: day.day,
+                        date: day.date,
+                        businessCategory: day.businessCategory,
+                        account: day.account,
+                        country: day.country,
+                        serviceVersion: day.serviceVersion,
+                        currency: day.currency,
+                        zarRate: day.zarRate,
+                        serviceSKU: day.serviceSKU,
+                        dailyBillingLCU: day.dailyBillingLCU || 0,
+                        revenue: day.revenue || 0,
+                        target: day.target || 0,
+                        churnedSubs: day.churnedSubs || 0,
+                        dailyAcquisitions: day.dailyAcquisitions || 0,
+                        netAdditions: day.netAdditions || 0,
+                        subscriberBase: day.subscriberBase || 0
+                    }));
+                    
+                    await fetch('/api/daily-data/bulk', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data: dailyDataArray })
+                    });
+                }
+            }
+            
+            console.log('✅ Data saved to D1 database successfully');
+        } catch (error) {
+            console.error('❌ Failed to save to D1 database:', error);
+        }
     },
     
-    loadPerformanceData() {
-        const stored = localStorage.getItem('performanceData');
-        if (stored) {
-            STATE.performanceData = JSON.parse(stored);
-            console.log('Loaded performance data from localStorage');
+    async loadPerformanceData() {
+        console.log('🔄 Loading data from Cloudflare D1 database...');
+        
+        try {
+            const response = await fetch('/api/services');
+            const result = await response.json();
+            
+            if (result.success && result.data && result.data.length > 0) {
+                // Load all services with their daily data
+                const services = [];
+                for (const service of result.data) {
+                    const serviceResponse = await fetch(`/api/services/${service.id}`);
+                    const serviceResult = await serviceResponse.json();
+                    if (serviceResult.success) {
+                        const fullService = serviceResult.data;
+                        // Convert snake_case from DB to camelCase for frontend
+                        services.push({
+                            id: fullService.id,
+                            name: fullService.name,
+                            category: fullService.category,
+                            account: fullService.account,
+                            country: fullService.country,
+                            serviceVersion: fullService.service_version,
+                            serviceSKU: fullService.service_sku,
+                            currency: fullService.currency,
+                            zarRate: fullService.zar_rate,
+                            mtdRevenue: fullService.mtd_revenue,
+                            mtdTarget: fullService.mtd_target,
+                            actualRunRate: fullService.actual_run_rate,
+                            requiredRunRate: fullService.required_run_rate,
+                            subscriberBase: fullService.subscriber_base,
+                            mtdNetAdditions: fullService.mtd_net_additions,
+                            dailyData: (fullService.dailyData || []).map(day => ({
+                                day: day.day,
+                                date: day.date,
+                                businessCategory: day.business_category,
+                                account: day.account,
+                                country: day.country,
+                                serviceVersion: day.service_version,
+                                currency: day.currency,
+                                zarRate: day.zar_rate,
+                                serviceSKU: day.service_sku,
+                                dailyBillingLCU: day.daily_billing_lcu,
+                                revenue: day.revenue,
+                                target: day.target,
+                                churnedSubs: day.churned_subs,
+                                dailyAcquisitions: day.daily_acquisitions,
+                                netAdditions: day.net_additions,
+                                subscriberBase: day.subscriber_base
+                            }))
+                        });
+                    }
+                }
+                
+                STATE.performanceData = {
+                    services: services,
+                    filters: STATE.performanceData?.filters || {}
+                };
+                
+                console.log(`✅ Loaded ${services.length} services from D1 database`);
+            } else {
+                console.log('ℹ️ No data in D1 database, using empty state');
+                STATE.performanceData = { services: [], filters: {} };
+            }
+        } catch (error) {
+            console.error('❌ Failed to load from D1 database:', error);
+            STATE.performanceData = { services: [], filters: {} };
         }
     },
     
