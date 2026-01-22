@@ -2272,6 +2272,7 @@ const App = {
         const serviceFilter = document.getElementById('perf-service-filter')?.value || 'All';
         const versionFilter = document.getElementById('perf-version-filter')?.value || 'All';
         const skuFilter = document.getElementById('perf-sku-filter')?.value || 'All';
+        const monthFilter = document.getElementById('perf-month-filter')?.value || '2026-01';
         const showTargetToDate = document.getElementById('toggle-target-to-date')?.checked || false;
         
         // Filter services based on all criteria
@@ -2295,13 +2296,42 @@ const App = {
             filteredServices = filteredServices.filter(s => s.serviceSKU === skuFilter);
         }
         
-        // Calculate aggregated metrics
-        const totalMtdRevenue = filteredServices.reduce((sum, s) => sum + s.mtdRevenue, 0);
-        const totalMtdTarget = filteredServices.reduce((sum, s) => sum + s.mtdTarget, 0);
-        const totalActualRunRate = filteredServices.reduce((sum, s) => sum + s.actualRunRate, 0);
-        const totalRequiredRunRate = filteredServices.reduce((sum, s) => sum + s.requiredRunRate, 0);
-        const totalSubscriberBase = filteredServices.reduce((sum, s) => sum + s.subscriberBase, 0);
-        const totalMtdNetAdditions = filteredServices.reduce((sum, s) => sum + (s.mtdNetAdditions || 0), 0);
+        // Filter daily data by selected month and recalculate metrics
+        const [filterYear, filterMonth] = monthFilter.split('-').map(Number);
+        const monthPrefix = `${filterYear}-${String(filterMonth).padStart(2, '0')}`;
+        
+        // Create month-filtered versions of services with recalculated metrics
+        const monthFilteredServices = filteredServices.map(service => {
+            // Filter daily data to only include selected month
+            const monthDailyData = service.dailyData.filter(day => day.date.startsWith(monthPrefix));
+            
+            // Recalculate MTD metrics based on filtered month data
+            const mtdRevenue = monthDailyData.reduce((sum, day) => sum + day.revenue, 0);
+            const mtdTarget = monthDailyData.reduce((sum, day) => sum + day.target, 0);
+            const mtdNetAdditions = monthDailyData.reduce((sum, day) => sum + (day.netAdditions || 0), 0);
+            const actualRunRate = monthDailyData.length > 0 ? Math.round(mtdRevenue / monthDailyData.length) : 0;
+            const requiredRunRate = monthDailyData.length > 0 ? Math.round(mtdTarget / monthDailyData.length) : 0;
+            const subscriberBase = monthDailyData.length > 0 ? monthDailyData[monthDailyData.length - 1].subscriberBase : service.subscriberBase;
+            
+            return {
+                ...service,
+                dailyData: monthDailyData,
+                mtdRevenue,
+                mtdTarget,
+                mtdNetAdditions,
+                actualRunRate,
+                requiredRunRate,
+                subscriberBase
+            };
+        });
+        
+        // Calculate aggregated metrics from month-filtered data
+        const totalMtdRevenue = monthFilteredServices.reduce((sum, s) => sum + s.mtdRevenue, 0);
+        const totalMtdTarget = monthFilteredServices.reduce((sum, s) => sum + s.mtdTarget, 0);
+        const totalActualRunRate = monthFilteredServices.reduce((sum, s) => sum + s.actualRunRate, 0);
+        const totalRequiredRunRate = monthFilteredServices.reduce((sum, s) => sum + s.requiredRunRate, 0);
+        const totalSubscriberBase = monthFilteredServices.reduce((sum, s) => sum + s.subscriberBase, 0);
+        const totalMtdNetAdditions = monthFilteredServices.reduce((sum, s) => sum + (s.mtdNetAdditions || 0), 0);
         
         const variance = totalMtdRevenue - totalMtdTarget;
         const variancePercent = ((variance / totalMtdTarget) * 100).toFixed(1);
@@ -2328,12 +2358,12 @@ const App = {
         `;
         document.getElementById('kpi-subscriber-growth').style.color = totalMtdNetAdditions >= 0 ? '#10b981' : '#ef4444';
         
-        // Get today's revenue and net additions (last day in data)
-        const todayRevenue = filteredServices.reduce((sum, s) => {
+        // Get today's revenue and net additions (last day in month-filtered data)
+        const todayRevenue = monthFilteredServices.reduce((sum, s) => {
             const lastDay = s.dailyData[s.dailyData.length - 1];
             return sum + (lastDay ? lastDay.revenue : 0);
         }, 0);
-        const todayNetAdditions = filteredServices.reduce((sum, s) => {
+        const todayNetAdditions = monthFilteredServices.reduce((sum, s) => {
             const lastDay = s.dailyData[s.dailyData.length - 1];
             return sum + (lastDay ? lastDay.netAdditions : 0);
         }, 0);
@@ -2346,14 +2376,14 @@ const App = {
         `;
         document.getElementById('kpi-net-additions-status').style.color = todayNetAdditions >= 0 ? '#10b981' : '#ef4444';
         
-        // Render charts
-        this.renderPerformanceCharts(filteredServices, showTargetToDate);
+        // Render charts with month-filtered data
+        this.renderPerformanceCharts(monthFilteredServices, showTargetToDate);
         
-        // Render detail table
-        this.renderPerformanceTable(filteredServices);
+        // Render detail table with month-filtered data
+        this.renderPerformanceTable(monthFilteredServices);
         
-        // Render daily data table
-        this.renderDailyDataTable(filteredServices);
+        // Render daily data table with month-filtered data
+        this.renderDailyDataTable(monthFilteredServices);
     },
     
     renderPerformanceCharts(services, showTargetToDate) {
