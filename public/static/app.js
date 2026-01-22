@@ -1921,9 +1921,14 @@ const App = {
         // Once initialized, this will NEVER regenerate data automatically
         if ((!STATE.performanceData || !STATE.performanceData.services || STATE.performanceData.services.length === 0) && !dataVersion) {
             console.log('Initializing system with sample data (first time only)...');
-            // Generate sample data for different deployments
-            const yogamezZWDaily = this.generateDailyData('YoGamezPro', 'Vodacom', 'ZIMBABWE', 'USD', 18.5, 26, 85000);
-            const mobiZADaily = this.generateDailyData('MobiStream', 'MTN', 'SOUTH AFRICA', 'ZAR', 1.0, 26, 69000);
+            
+            // Get current date to determine how many days to generate for current month
+            const today = new Date();
+            const currentDay = today.getDate(); // Day of month (1-31)
+            
+            // Generate sample data for different deployments (up to today)
+            const yogamezZWDaily = this.generateDailyData('YoGamezPro', 'Vodacom', 'ZIMBABWE', 'USD', 18.5, currentDay, 85000);
+            const mobiZADaily = this.generateDailyData('MobiStream', 'MTN', 'SOUTH AFRICA', 'ZAR', 1.0, currentDay, 69000);
             
             // Calculate aggregated MTD values for each service
             const yogamezMtdRevenue = yogamezZWDaily.reduce((sum, day) => sum + day.revenue, 0);
@@ -1947,8 +1952,8 @@ const App = {
                         zarRate: 18.5,
                         mtdRevenue: yogamezMtdRevenue,
                         mtdTarget: yogamezMtdTarget,
-                        actualRunRate: Math.round(yogamezMtdRevenue / 26),
-                        requiredRunRate: Math.round(yogamezMtdTarget / 26),
+                        actualRunRate: Math.round(yogamezMtdRevenue / currentDay),
+                        requiredRunRate: Math.round(yogamezMtdTarget / currentDay),
                         subscriberBase: yogamezZWDaily[yogamezZWDaily.length - 1].subscriberBase,
                         mtdNetAdditions: yogamezMtdNetAdds,
                         dailyData: yogamezZWDaily
@@ -1964,8 +1969,8 @@ const App = {
                         zarRate: 1.0,
                         mtdRevenue: mobiMtdRevenue,
                         mtdTarget: mobiMtdTarget,
-                        actualRunRate: Math.round(mobiMtdRevenue / 26),
-                        requiredRunRate: Math.round(mobiMtdTarget / 26),
+                        actualRunRate: Math.round(mobiMtdRevenue / currentDay),
+                        requiredRunRate: Math.round(mobiMtdTarget / currentDay),
                         subscriberBase: mobiZADaily[mobiZADaily.length - 1].subscriberBase,
                         mtdNetAdditions: mobiMtdNetAdds,
                         dailyData: mobiZADaily
@@ -2300,10 +2305,25 @@ const App = {
         const [filterYear, filterMonth] = monthFilter.split('-').map(Number);
         const monthPrefix = `${filterYear}-${String(filterMonth).padStart(2, '0')}`;
         
+        // Check if selected month is the current month
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth() + 1; // JavaScript months are 0-indexed
+        const currentDay = today.getDate();
+        const isCurrentMonth = (filterYear === currentYear && filterMonth === currentMonth);
+        
         // Create month-filtered versions of services with recalculated metrics
         const monthFilteredServices = filteredServices.map(service => {
             // Filter daily data to only include selected month
-            const monthDailyData = service.dailyData.filter(day => day.date.startsWith(monthPrefix));
+            let monthDailyData = service.dailyData.filter(day => day.date.startsWith(monthPrefix));
+            
+            // If viewing current month, only show data up to today
+            if (isCurrentMonth) {
+                monthDailyData = monthDailyData.filter(day => {
+                    const dayNum = parseInt(day.date.split('-')[2]);
+                    return dayNum <= currentDay;
+                });
+            }
             
             // Recalculate MTD metrics based on filtered month data
             const mtdRevenue = monthDailyData.reduce((sum, day) => sum + day.revenue, 0);
