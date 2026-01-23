@@ -393,13 +393,15 @@ const App = {
                 // Convert DB format to app format
                 STATE.masteryData = dbMastery.map(item => ({
                     id: item.id,
-                    skillName: item.skill_name,
+                    username: item.username || '',
                     category: item.category,
-                    currentLevel: item.current_level || 0,
-                    targetLevel: item.target_level || 5,
-                    progressPercentage: item.progress_percentage || 0,
-                    lastPracticeDate: item.last_practice_date,
-                    notes: item.notes
+                    course: item.skill_name,
+                    completion: item.progress_percentage || 0,
+                    initiated: item.initiated || '',
+                    updated: item.last_practice_date || item.updated_at?.split(' ')[0] || '',
+                    concluded: item.concluded || '',
+                    createdBy: item.created_by || '',
+                    createdAt: item.created_at || ''
                 }));
                 console.log('✅ Loaded', STATE.masteryData.length, 'mastery records from D1 database');
             } else {
@@ -425,7 +427,11 @@ const App = {
                     targetLevel: record.targetLevel || 100,
                     progressPercentage: record.completion || record.progressPercentage || 0,
                     lastPracticeDate: record.updated || record.lastPracticeDate,
-                    notes: record.comments || record.notes || ''
+                    notes: record.comments || record.notes || '',
+                    username: record.username || '',
+                    initiated: record.initiated || '',
+                    concluded: record.concluded || '',
+                    createdBy: record.createdBy || ''
                 };
 
                 if (record.id && typeof record.id === 'number') {

@@ -421,8 +421,8 @@ api.post('/mastery', async (c) => {
     const body = await c.req.json()
     
     const result = await c.env.DB.prepare(`
-      INSERT INTO mastery_data (skill_name, category, current_level, target_level, progress_percentage, last_practice_date, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO mastery_data (skill_name, category, current_level, target_level, progress_percentage, last_practice_date, notes, username, initiated, concluded, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.skillName,
       body.category,
@@ -430,7 +430,11 @@ api.post('/mastery', async (c) => {
       body.targetLevel || 5,
       body.progressPercentage || 0,
       body.lastPracticeDate || null,
-      body.notes || null
+      body.notes || null,
+      body.username || null,
+      body.initiated || null,
+      body.concluded || null,
+      body.createdBy || null
     ).run()
     
     return c.json({ success: true, data: { id: result.meta.last_row_id, ...body } })
@@ -449,6 +453,7 @@ api.put('/mastery/:id', async (c) => {
       UPDATE mastery_data SET
         skill_name = ?, category = ?, current_level = ?, target_level = ?,
         progress_percentage = ?, last_practice_date = ?, notes = ?,
+        username = ?, initiated = ?, concluded = ?, created_by = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).bind(
@@ -459,6 +464,10 @@ api.put('/mastery/:id', async (c) => {
       body.progressPercentage,
       body.lastPracticeDate,
       body.notes,
+      body.username,
+      body.initiated,
+      body.concluded,
+      body.createdBy,
       id
     ).run()
     
