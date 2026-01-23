@@ -428,12 +428,12 @@ const App = {
                     notes: record.comments || record.notes || ''
                 };
 
-                if (record.id && !record.id.startsWith('mastery-')) {
+                if (record.id && typeof record.id === 'number') {
                     // Update existing (has numeric DB id)
                     await DBService.updateMastery(record.id, masteryData);
                     console.log('✅ Updated mastery record:', record.id);
                 } else {
-                    // Create new
+                    // Create new (no ID or has temporary 'mastery-' prefix)
                     const created = await DBService.createMastery(masteryData);
                     record.id = created.id; // Update with DB id
                     console.log('✅ Created mastery record:', created.id);
@@ -612,9 +612,7 @@ const App = {
                         console.log('✅ Created kanban card:', card.id);
                     }
                 } catch (err) {
-                    // If error, try to create
-                    await DBService.createKanban(kanbanData);
-                    console.log('✅ Created kanban card:', card.id);
+                    console.error('❌ Error saving kanban card:', card.id, err);
                 }
             }
             console.log('✅ All kanban cards saved to D1');
