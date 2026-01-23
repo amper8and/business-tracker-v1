@@ -416,9 +416,30 @@ const App = {
         console.log('🔄 Saving mastery data to Cloudflare D1 database...');
         
         try {
-            // Note: Individual mastery updates should call DBService methods directly
-            // This function is mainly for compatibility
-            console.log('✅ Mastery data is managed individually via DBService API');
+            // Save all mastery records to D1
+            for (const record of STATE.masteryData) {
+                const masteryData = {
+                    skillName: record.course || record.skillName,
+                    category: record.category,
+                    currentLevel: record.completion || record.currentLevel || 0,
+                    targetLevel: record.targetLevel || 100,
+                    progressPercentage: record.completion || record.progressPercentage || 0,
+                    lastPracticeDate: record.updated || record.lastPracticeDate,
+                    notes: record.comments || record.notes || ''
+                };
+
+                if (record.id && !record.id.startsWith('mastery-')) {
+                    // Update existing (has numeric DB id)
+                    await DBService.updateMastery(record.id, masteryData);
+                    console.log('✅ Updated mastery record:', record.id);
+                } else {
+                    // Create new
+                    const created = await DBService.createMastery(masteryData);
+                    record.id = created.id; // Update with DB id
+                    console.log('✅ Created mastery record:', created.id);
+                }
+            }
+            console.log('✅ All mastery data saved to D1');
         } catch (error) {
             console.error('❌ Failed to save mastery data:', error);
         }
@@ -562,9 +583,41 @@ const App = {
         console.log('🔄 Saving kanban cards to Cloudflare D1 database...');
         
         try {
-            // Note: Individual kanban card updates should call DBService methods directly
-            // This function is mainly for compatibility
-            console.log('✅ Kanban cards are managed individually via DBService API');
+            // Save all kanban cards to D1
+            for (const card of STATE.kanbanCards) {
+                const kanbanData = {
+                    id: card.id,
+                    title: card.name,
+                    description: card.comments || card.capability,
+                    category: card.category,
+                    priority: card.status ? card.status.charAt(0).toUpperCase() + card.status.slice(1) : 'Medium',
+                    status: card.lane,
+                    assignedTo: card.owner,
+                    dueDate: card.targetDate,
+                    tags: card.tags || []
+                };
+
+                // Check if card exists in DB by trying to fetch it
+                try {
+                    const existing = await DBService.getAllKanban();
+                    const existsInDb = existing.some(k => k.card_id === card.id);
+                    
+                    if (existsInDb) {
+                        // Update existing
+                        await DBService.updateKanban(card.id, kanbanData);
+                        console.log('✅ Updated kanban card:', card.id);
+                    } else {
+                        // Create new
+                        await DBService.createKanban(kanbanData);
+                        console.log('✅ Created kanban card:', card.id);
+                    }
+                } catch (err) {
+                    // If error, try to create
+                    await DBService.createKanban(kanbanData);
+                    console.log('✅ Created kanban card:', card.id);
+                }
+            }
+            console.log('✅ All kanban cards saved to D1');
         } catch (error) {
             console.error('❌ Failed to save kanban cards:', error);
         }
@@ -1404,7 +1457,7 @@ const App = {
         console.log('Course dropdown populated with', filteredCourses.length, 'courses');
     },
     
-    saveCourse() {
+    async saveCourse() {
         const rowId = document.getElementById('course-row-id').value;
         const username = document.getElementById('course-username').value;
         const category = document.getElementById('course-category').value;
@@ -1459,7 +1512,7 @@ const App = {
             STATE.masteryData.push(courseData);
         }
         
-        this.saveMasteryData();
+        await this.saveMasteryData();
         console.log('Course saved:', courseData);
         
         Utils.hide('course-modal');
@@ -4230,7 +4283,7 @@ const App = {
         }
     },
     
-    saveCard() {
+    async saveCard() {
         const cardId = document.getElementById('card-id').value;
         const name = document.getElementById('card-name').value;
         const capability = document.getElementById('card-capability').value;
@@ -4276,13 +4329,13 @@ const App = {
             STATE.kanbanCards.push(cardData);
         }
         
-        this.saveKanbanData();
+        await this.saveKanbanData();
         Utils.hide('card-modal');
         this.renderKanban();
         this.updateScorecardData();
     },
     
-    deleteCard() {
+    async deleteCard() {
         if (!confirm('Are you sure you want to delete this activity?')) return;
         
         const cardId = document.getElementById('card-id').value;
@@ -4297,11 +4350,21 @@ const App = {
                 return;
             }
             
-            STATE.kanbanCards.splice(index, 1);
-            this.saveKanbanData();
-            Utils.hide('card-modal');
-            this.renderKanban();
-            this.updateScorecardData();
+            try {
+                // Delete from D1 database first
+                await DBService.deleteKanban(cardId);
+                console.log('✅ Deleted kanban card from D1:', cardId);
+                
+                // Remove from local state
+                STATE.kanbanCards.splice(index, 1);
+                
+                Utils.hide('card-modal');
+                this.renderKanban();
+                this.updateScorecardData();
+            } catch (error) {
+                console.error('❌ Failed to delete kanban card:', error);
+                alert('Failed to delete card: ' + error.message);
+            }
         }
     }
 };
