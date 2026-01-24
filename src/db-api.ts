@@ -602,18 +602,28 @@ api.post('/kanban', async (c) => {
     const body = await c.req.json()
     
     const result = await c.env.DB.prepare(`
-      INSERT INTO kanban_cards (card_id, title, description, category, priority, status, assigned_to, due_date, tags)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO kanban_cards (
+        card_id, title, description, category, priority, status, 
+        assigned_to, due_date, tags, capability, owner, start_date, 
+        target_date, lane, comments
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.id,
       body.title,
       body.description || null,
       body.category || null,
       body.priority || 'Medium',
-      body.status || 'todo',
+      body.status || 'Planned',
       body.assignedTo || null,
       body.dueDate || null,
-      body.tags ? JSON.stringify(body.tags) : null
+      body.tags ? JSON.stringify(body.tags) : null,
+      body.capability || null,
+      body.owner || null,
+      body.startDate || null,
+      body.targetDate || null,
+      body.lane || 'Planned',
+      body.comments || null
     ).run()
     
     return c.json({ success: true, data: { id: result.meta.last_row_id, ...body } })
@@ -631,7 +641,9 @@ api.put('/kanban/:cardId', async (c) => {
     await c.env.DB.prepare(`
       UPDATE kanban_cards SET
         title = ?, description = ?, category = ?, priority = ?, status = ?,
-        assigned_to = ?, due_date = ?, tags = ?, updated_at = CURRENT_TIMESTAMP
+        assigned_to = ?, due_date = ?, tags = ?, capability = ?, owner = ?,
+        start_date = ?, target_date = ?, lane = ?, comments = ?,
+        updated_at = CURRENT_TIMESTAMP
       WHERE card_id = ?
     `).bind(
       body.title,
@@ -642,6 +654,12 @@ api.put('/kanban/:cardId', async (c) => {
       body.assignedTo,
       body.dueDate,
       body.tags ? JSON.stringify(body.tags) : null,
+      body.capability,
+      body.owner,
+      body.startDate,
+      body.targetDate,
+      body.lane,
+      body.comments,
       cardId
     ).run()
     

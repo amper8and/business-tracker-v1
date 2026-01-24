@@ -506,15 +506,15 @@ const App = {
                 STATE.kanbanCards = dbKanban.map(card => ({
                     id: card.card_id,
                     name: card.title,
-                    capability: card.description || '',
-                    owner: card.assigned_to || '',
+                    capability: card.capability || '',
+                    owner: card.owner || card.assigned_to || '',
                     category: card.category || '',
-                    startDate: card.created_at ? card.created_at.split('T')[0] : '',
-                    targetDate: card.due_date || '',
+                    startDate: card.start_date || (card.created_at ? card.created_at.split('T')[0] : ''),
+                    targetDate: card.target_date || card.due_date || '',
                     status: card.priority?.toLowerCase() || 'green',
-                    lane: card.status || 'Planned',
-                    comments: card.description || '',
-                    tags: card.tags ? JSON.parse(card.tags) : []
+                    lane: card.lane || card.status || 'Planned',
+                    comments: card.comments || card.description || '',
+                    tags: card.tags ? (typeof card.tags === 'string' ? JSON.parse(card.tags) : card.tags) : []
                 }));
                 console.log('✅ Loaded', STATE.kanbanCards.length, 'kanban cards from D1 database');
             } else {
