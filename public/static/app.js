@@ -766,34 +766,120 @@ const App = {
         this.updateScorecardData();
     },
     
+    // Helper function: Get month-filtered services using SAME logic as Level 2 Performance Dashboard
+    getMonthFilteredServices() {
+        if (!STATE.performanceData || !STATE.performanceData.services) {
+            return [];
+        }
+        
+        // Use current month filter (default to current month if Level 2 filter not set)
+        const monthFilter = document.getElementById('perf-month-filter')?.value || 
+                           `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+        
+        // Filter daily data by selected month and recalculate metrics
+        // This is the EXACT same logic as Level 2 Performance Dashboard (lines 2372-2422)
+        const [filterYear, filterMonth] = monthFilter.split('-').map(Number);
+        const monthPrefix = `${filterYear}-${String(filterMonth).padStart(2, '0')}`;
+        
+        // Check if selected month is the current month
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth() + 1;
+        const currentDay = today.getDate();
+        const isCurrentMonth = (filterYear === currentYear && filterMonth === currentMonth);
+        
+        // Apply Level 2 filters (category, account, country, etc.) if available
+        let filteredServices = STATE.performanceData.services;
+        const categoryFilter = document.getElementById('perf-category-filter')?.value || 'All';
+        const accountFilter = document.getElementById('perf-account-filter')?.value || 'All';
+        const countryFilter = document.getElementById('perf-country-filter')?.value || 'All';
+        const serviceFilter = document.getElementById('perf-service-filter')?.value || 'All';
+        const versionFilter = document.getElementById('perf-version-filter')?.value || 'All';
+        const skuFilter = document.getElementById('perf-sku-filter')?.value || 'All';
+        
+        if (categoryFilter !== 'All') {
+            filteredServices = filteredServices.filter(s => s.category === categoryFilter);
+        }
+        if (accountFilter !== 'All') {
+            filteredServices = filteredServices.filter(s => s.account === accountFilter);
+        }
+        if (countryFilter !== 'All') {
+            filteredServices = filteredServices.filter(s => s.country === countryFilter);
+        }
+        if (serviceFilter !== 'All') {
+            filteredServices = filteredServices.filter(s => s.name === serviceFilter);
+        }
+        if (versionFilter !== 'All') {
+            filteredServices = filteredServices.filter(s => s.serviceVersion === versionFilter);
+        }
+        if (skuFilter !== 'All') {
+            filteredServices = filteredServices.filter(s => s.serviceSKU === skuFilter);
+        }
+        
+        // Create month-filtered versions with recalculated metrics
+        const monthFilteredServices = filteredServices.map(service => {
+            // Filter daily data to only include selected month
+            let monthDailyData = service.dailyData.filter(day => day.date.startsWith(monthPrefix));
+            
+            // If viewing current month, only show data up to today
+            if (isCurrentMonth) {
+                monthDailyData = monthDailyData.filter(day => {
+                    const dayNum = parseInt(day.date.split('-')[2]);
+                    return dayNum <= currentDay;
+                });
+            }
+            
+            // Recalculate MTD metrics based on filtered month data
+            const mtdRevenue = monthDailyData.reduce((sum, day) => sum + day.revenue, 0);
+            const mtdTarget = monthDailyData.reduce((sum, day) => sum + day.target, 0);
+            const mtdNetAdditions = monthDailyData.reduce((sum, day) => sum + (day.netAdditions || 0), 0);
+            const actualRunRate = monthDailyData.length > 0 ? Math.round(mtdRevenue / monthDailyData.length) : 0;
+            const requiredRunRate = monthDailyData.length > 0 ? Math.round(mtdTarget / monthDailyData.length) : 0;
+            const subscriberBase = monthDailyData.length > 0 ? monthDailyData[monthDailyData.length - 1].subscriberBase : service.subscriberBase;
+            
+            return {
+                ...service,
+                dailyData: monthDailyData,
+                mtdRevenue,
+                mtdTarget,
+                mtdNetAdditions,
+                actualRunRate,
+                requiredRunRate,
+                subscriberBase
+            };
+        });
+        
+        return monthFilteredServices;
+    },
+    
     updateScorecardData() {
         console.log('updateScorecardData() called');
         
-        // Update performance KPIs
+        // Update performance KPIs using the SAME source as Level 2 Performance Dashboard
         if (STATE.performanceData && STATE.performanceData.services) {
             const perfContent = document.getElementById('performance-content');
             if (perfContent) {
                 const kpis = perfContent.querySelectorAll('.kpi-value');
                 if (kpis.length >= 5) {
-                    // Calculate aggregated values from all services
-                    const services = STATE.performanceData.services;
-                    const totalMtdRevenue = services.reduce((sum, s) => sum + s.mtdRevenue, 0);
-                    const totalActualRunRate = services.reduce((sum, s) => sum + s.actualRunRate, 0);
-                    const totalSubscriberBase = services.reduce((sum, s) => sum + s.subscriberBase, 0);
+                    // Use the SAME filtering and calculation logic as Level 2 Performance Dashboard
+                    const monthFilteredServices = this.getMonthFilteredServices();
                     
-                    // Get today's revenue (last day from all services)
-                    const todayRevenue = services.reduce((sum, s) => {
+                    // Calculate aggregated metrics using SAME logic as Level 2 (lines 2425-2430)
+                    const totalMtdRevenue = monthFilteredServices.reduce((sum, s) => sum + s.mtdRevenue, 0);
+                    const totalActualRunRate = monthFilteredServices.reduce((sum, s) => sum + s.actualRunRate, 0);
+                    const totalSubscriberBase = monthFilteredServices.reduce((sum, s) => sum + s.subscriberBase, 0);
+                    
+                    // Get today's revenue and net additions using SAME logic as Level 2 (lines 2458-2465)
+                    const todayRevenue = monthFilteredServices.reduce((sum, s) => {
                         const lastDay = s.dailyData[s.dailyData.length - 1];
                         return sum + (lastDay ? lastDay.revenue : 0);
                     }, 0);
-                    
-                    // Get today's net additions (last day from all services)
-                    const todayNetAdditions = services.reduce((sum, s) => {
+                    const todayNetAdditions = monthFilteredServices.reduce((sum, s) => {
                         const lastDay = s.dailyData[s.dailyData.length - 1];
                         return sum + (lastDay ? lastDay.netAdditions : 0);
                     }, 0);
                     
-                    // Format values
+                    // Format values using SAME format as Level 2 (lines 2467-2468, 2436, 2444, 2449)
                     kpis[0].textContent = `R ${(totalMtdRevenue / 1000000).toFixed(1)}M`;
                     kpis[1].textContent = `R ${(totalActualRunRate / 1000).toFixed(0)}K/day`;
                     kpis[2].textContent = `${(totalSubscriberBase / 1000).toFixed(0)}K`;
