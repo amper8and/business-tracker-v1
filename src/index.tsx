@@ -124,7 +124,7 @@ app.get('*', async (c) => {
                                         <span class="value">0%</span>
                                     </div>
                                     <div class="status-item in-progress">
-                                        <span class="label">In Progress:</span>
+                                        <span class="label">At Risk:</span>
                                         <span class="value">0%</span>
                                     </div>
                                     <div class="status-item off-track">
@@ -147,7 +147,7 @@ app.get('*', async (c) => {
                                         <span class="value">0%</span>
                                     </div>
                                     <div class="status-item in-progress">
-                                        <span class="label">In Progress:</span>
+                                        <span class="label">At Risk:</span>
                                         <span class="value">0%</span>
                                     </div>
                                     <div class="status-item off-track">
@@ -170,7 +170,7 @@ app.get('*', async (c) => {
                                         <span class="value">0%</span>
                                     </div>
                                     <div class="status-item in-progress">
-                                        <span class="label">In Progress:</span>
+                                        <span class="label">At Risk:</span>
                                         <span class="value">0%</span>
                                     </div>
                                     <div class="status-item off-track">
@@ -193,7 +193,7 @@ app.get('*', async (c) => {
                                         <span class="value">0%</span>
                                     </div>
                                     <div class="status-item in-progress">
-                                        <span class="label">In Progress:</span>
+                                        <span class="label">At Risk:</span>
                                         <span class="value">0%</span>
                                     </div>
                                     <div class="status-item off-track">
