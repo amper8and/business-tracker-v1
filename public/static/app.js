@@ -593,15 +593,24 @@ const App = {
             for (const card of STATE.kanbanCards) {
                 const kanbanData = {
                     id: card.id,
-                    title: card.name,
-                    description: card.comments || card.capability,
-                    category: card.category,
+                    title: card.name || '',
+                    description: card.comments || card.capability || '',
+                    category: card.category || '',
                     priority: card.status ? card.status.charAt(0).toUpperCase() + card.status.slice(1) : 'Medium',
-                    status: card.lane,
-                    assignedTo: card.owner,
-                    dueDate: card.targetDate,
-                    tags: card.tags || []
+                    status: card.lane || 'Planned',
+                    assignedTo: card.owner || '',
+                    dueDate: card.targetDate || '',
+                    tags: card.tags || [],
+                    capability: card.capability || '',
+                    owner: card.owner || '',
+                    startDate: card.startDate || '',
+                    targetDate: card.targetDate || '',
+                    lane: card.lane || 'Planned',
+                    comments: card.comments || ''
                 };
+
+                // Log what we're saving
+                console.log('💾 Saving card:', card.id, 'Owner:', kanbanData.owner, 'Capability:', kanbanData.capability);
 
                 // Check if card exists in DB by trying to fetch it
                 try {
