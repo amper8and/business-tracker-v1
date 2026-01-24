@@ -379,8 +379,8 @@ const App = {
         // Load kanban data
         await this.loadKanbanData();
         
-        // Load performance data from D1 database (or generate sample data if empty)
-        await this.generatePerformanceData();
+        // Load performance data from D1 database
+        await this.loadPerformanceData();
     },
     
     async loadMasteryData() {
