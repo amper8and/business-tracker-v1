@@ -1160,10 +1160,10 @@ const App = {
                     <td>${user.channelBusiness ? '<i class="fas fa-check text-success"></i>' : '<i class="fas fa-times text-muted"></i>'}</td>
                     <td>${lastLogin}</td>
                     <td class="action-buttons">
-                        <button class="btn-icon" onclick="App.editUser('${user.id}')">
+                        <button class="btn-icon" onclick="App.editUser(${user.id})">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn-icon delete" onclick="App.deleteUser('${user.id}')">
+                        <button class="btn-icon delete" onclick="App.deleteUser(${user.id})">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
