@@ -384,7 +384,7 @@ api.post('/migrate', async (c) => {
 api.get('/users', async (c) => {
   try {
     const { results } = await c.env.DB.prepare(`
-      SELECT id, username, password, type, created_at, updated_at FROM users ORDER BY username
+      SELECT id, username, password, type, last_login, created_at, updated_at FROM users ORDER BY username
     `).all()
     
     return c.json({ success: true, data: results })
@@ -419,6 +419,21 @@ api.put('/users/:id', async (c) => {
     `).bind(body.password, body.type, id).run()
     
     return c.json({ success: true, data: { id, ...body } })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// PATCH update user last login
+api.patch('/users/:id/last-login', async (c) => {
+  try {
+    const id = c.req.param('id')
+    
+    await c.env.DB.prepare(`
+      UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?
+    `).bind(id).run()
+    
+    return c.json({ success: true })
   } catch (error: any) {
     return c.json({ success: false, error: error.message }, 500)
   }

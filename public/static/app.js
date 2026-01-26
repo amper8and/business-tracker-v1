@@ -226,7 +226,7 @@ const Auth = {
                     type: user.type,
                     contentBusiness: true,
                     channelBusiness: true,
-                    lastLogin: ''
+                    lastLogin: user.last_login || ''
                 }));
                 console.log('✅ Loaded', STATE.users.length, 'users from D1 database');
             } else {
@@ -303,9 +303,17 @@ const Auth = {
                 return;
             }
             
-            // Update last login timestamp
-            user.lastLogin = new Date().toISOString();
-            this.saveUsers();
+            // Update last login timestamp in database
+            try {
+                await fetch(`/api/users/${user.id}/last-login`, { 
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                // Update local state
+                user.lastLogin = new Date().toISOString();
+            } catch (error) {
+                console.error('Failed to update last login:', error);
+            }
             
             console.log('User logged in:', user.username, 'Type:', user.type, 'Type length:', user.type.length);
             
