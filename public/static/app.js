@@ -1120,19 +1120,40 @@ const App = {
             return;
         }
         
-        // Update password in local storage
-        const userIndex = STATE.users.findIndex(u => u.id === STATE.currentUser.id);
-        if (userIndex !== -1) {
-            STATE.users[userIndex].password = newPass;
-            STATE.currentUser.password = newPass;
-            Auth.saveUsers();
-            sessionStorage.setItem('currentUser', JSON.stringify(STATE.currentUser));
-        }
+        // Update password in database
+        const updatePassword = async () => {
+            try {
+                const response = await fetch(`/api/users/${STATE.currentUser.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        password: newPass,
+                        type: STATE.currentUser.type
+                    })
+                });
+                
+                if (response.ok) {
+                    // Update local state after successful database update
+                    const userIndex = STATE.users.findIndex(u => u.id === STATE.currentUser.id);
+                    if (userIndex !== -1) {
+                        STATE.users[userIndex].password = newPass;
+                    }
+                    STATE.currentUser.password = newPass;
+                    sessionStorage.setItem('currentUser', JSON.stringify(STATE.currentUser));
+                    
+                    console.log('Password changed for:', STATE.currentUser.username);
+                    Utils.hide('change-password-modal');
+                    alert('Password changed successfully!');
+                } else {
+                    Utils.showError('password-error', 'Failed to update password');
+                }
+            } catch (error) {
+                console.error('Error updating password:', error);
+                Utils.showError('password-error', 'Failed to update password');
+            }
+        };
         
-        console.log('Password changed for:', STATE.currentUser.username);
-        
-        Utils.hide('change-password-modal');
-        alert('Password changed successfully!');
+        updatePassword();
     },
     
     // User Management (Admin Only)
