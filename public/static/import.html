@@ -209,16 +209,22 @@
         function processData(data) {
             parsedData = data;
             
-            // Group by service
+            // Group by service + service_version + service_sku (unique combination)
             const services = {};
             data.forEach(row => {
                 const serviceName = row.service_name || row.name;
-                if (!services[serviceName]) {
-                    services[serviceName] = {
+                const serviceVersion = row.service_version || '';
+                const serviceSKU = row.service_sku || '';
+                const serviceKey = `${serviceName}|${serviceVersion}|${serviceSKU}`;
+                
+                if (!services[serviceKey]) {
+                    services[serviceKey] = {
                         name: serviceName,
                         category: row.category,
                         account: row.account,
                         country: row.country,
+                        serviceVersion: serviceVersion,
+                        serviceSKU: serviceSKU,
                         currency: row.currency,
                         zarRate: parseFloat(row.zar_rate),
                         requiredRunRate: parseFloat(row.required_run_rate),
@@ -227,10 +233,22 @@
                     };
                 }
                 
-                services[serviceName].dailyData.push({
+                // Calculate revenue for each day: Daily Billing × ZAR Rate
+                const dailyBillingLCU = parseFloat(row.daily_billing_lcu || 0);
+                const zarRate = parseFloat(row.zar_rate || 1);
+                const revenue = Math.round(dailyBillingLCU * zarRate);
+                
+                services[serviceKey].dailyData.push({
                     day: parseInt(row.day),
                     date: row.date,
-                    dailyBillingLCU: parseFloat(row.daily_billing_lcu || 0),
+                    businessCategory: row.category,
+                    account: row.account,
+                    country: row.country,
+                    serviceVersion: serviceVersion,
+                    serviceSKU: serviceSKU,
+                    zarRate: zarRate,
+                    dailyBillingLCU: dailyBillingLCU,
+                    revenue: revenue,
                     target: parseFloat(row.target || 0),
                     churnedSubs: parseInt(row.churned_subs || 0),
                     dailyAcquisitions: parseInt(row.daily_acquisitions || 0),
