@@ -1215,7 +1215,7 @@ const App = {
     },
     
     saveUser() {
-        const userId = document.getElementById('edit-user-id').value;
+        const userId = parseInt(document.getElementById('edit-user-id').value) || null;
         const username = document.getElementById('edit-user-username').value.trim();
         const password = document.getElementById('edit-user-password').value.trim();
         const type = document.getElementById('edit-user-type').value;
