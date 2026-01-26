@@ -384,7 +384,9 @@ api.post('/migrate', async (c) => {
 api.get('/users', async (c) => {
   try {
     const { results } = await c.env.DB.prepare(`
-      SELECT id, username, password, type, last_login, created_at, updated_at FROM users ORDER BY username
+      SELECT id, username, password, type, content_business, channel_business, last_login, created_at, updated_at 
+      FROM users 
+      ORDER BY username
     `).all()
     
     return c.json({ success: true, data: results })
@@ -399,8 +401,15 @@ api.post('/users', async (c) => {
     const body = await c.req.json()
     
     const result = await c.env.DB.prepare(`
-      INSERT INTO users (username, password, type) VALUES (?, ?, ?)
-    `).bind(body.username, body.password, body.type).run()
+      INSERT INTO users (username, password, type, content_business, channel_business) 
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(
+      body.username, 
+      body.password, 
+      body.type, 
+      body.contentBusiness ? 1 : 0, 
+      body.channelBusiness ? 1 : 0
+    ).run()
     
     return c.json({ success: true, data: { id: result.meta.last_row_id, ...body } })
   } catch (error: any) {
@@ -415,8 +424,20 @@ api.put('/users/:id', async (c) => {
     const body = await c.req.json()
     
     await c.env.DB.prepare(`
-      UPDATE users SET password = ?, type = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
-    `).bind(body.password, body.type, id).run()
+      UPDATE users 
+      SET password = ?, 
+          type = ?, 
+          content_business = ?, 
+          channel_business = ?, 
+          updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).bind(
+      body.password, 
+      body.type, 
+      body.contentBusiness ? 1 : 0, 
+      body.channelBusiness ? 1 : 0, 
+      id
+    ).run()
     
     return c.json({ success: true, data: { id, ...body } })
   } catch (error: any) {

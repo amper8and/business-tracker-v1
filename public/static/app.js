@@ -224,8 +224,8 @@ const Auth = {
                     password: user.password,
                     name: user.username,
                     type: user.type,
-                    contentBusiness: true,
-                    channelBusiness: true,
+                    contentBusiness: user.content_business === 1,
+                    channelBusiness: user.channel_business === 1,
                     lastLogin: user.last_login || ''
                 }));
                 console.log('✅ Loaded', STATE.users.length, 'users from D1 database');
@@ -1266,43 +1266,98 @@ const App = {
         
         if (userId) {
             // Update existing user
-            const userIndex = STATE.users.findIndex(u => u.id === userId);
-            if (userIndex !== -1) {
-                STATE.users[userIndex] = {
-                    ...STATE.users[userIndex],
-                    username,
-                    password,
-                    name: username,
-                    type,
-                    contentBusiness,
-                    channelBusiness
-                };
-                
-                // Update current user if editing self
-                if (STATE.currentUser.id === userId) {
-                    STATE.currentUser = STATE.users[userIndex];
-                    sessionStorage.setItem('currentUser', JSON.stringify(STATE.currentUser));
+            const updateUser = async () => {
+                try {
+                    // Call backend API to update user
+                    const response = await fetch(`/api/users/${userId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            password,
+                            type,
+                            contentBusiness,
+                            channelBusiness
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        // Update local state after successful database update
+                        const userIndex = STATE.users.findIndex(u => u.id === userId);
+                        if (userIndex !== -1) {
+                            STATE.users[userIndex] = {
+                                ...STATE.users[userIndex],
+                                password,
+                                type,
+                                contentBusiness,
+                                channelBusiness
+                            };
+                            
+                            // Update current user if editing self
+                            if (STATE.currentUser.id === userId) {
+                                STATE.currentUser = STATE.users[userIndex];
+                                sessionStorage.setItem('currentUser', JSON.stringify(STATE.currentUser));
+                            }
+                        }
+                        
+                        this.renderUsersTable();
+                        Utils.hide('edit-user-modal');
+                        alert('User saved successfully!');
+                    } else {
+                        alert('Failed to update user');
+                    }
+                } catch (error) {
+                    console.error('Error updating user:', error);
+                    alert('Failed to update user');
                 }
-            }
+            };
+            
+            updateUser();
         } else {
             // Create new user
-            const newUser = {
-                id: 'user-' + Date.now(),
-                username,
-                password,
-                name: username,
-                type,
-                contentBusiness,
-                channelBusiness,
-                lastLogin: ''
+            const createUser = async () => {
+                try {
+                    // Call backend API to create user
+                    const response = await fetch('/api/users', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username,
+                            password,
+                            type,
+                            contentBusiness,
+                            channelBusiness
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        // Add new user to local state with ID from database
+                        const newUser = {
+                            id: result.data.id,
+                            username,
+                            password,
+                            name: username,
+                            type,
+                            contentBusiness,
+                            channelBusiness,
+                            lastLogin: ''
+                        };
+                        STATE.users.push(newUser);
+                        
+                        this.renderUsersTable();
+                        Utils.hide('edit-user-modal');
+                        alert('User saved successfully!');
+                    } else {
+                        alert('Failed to create user');
+                    }
+                } catch (error) {
+                    console.error('Error creating user:', error);
+                    alert('Failed to create user');
+                }
             };
-            STATE.users.push(newUser);
+            
+            createUser();
         }
-        
-        Auth.saveUsers();
-        this.renderUsersTable();
-        Utils.hide('edit-user-modal');
-        alert('User saved successfully!');
     },
     
     async deleteUser(userId) {
