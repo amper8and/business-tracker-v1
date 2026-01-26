@@ -272,42 +272,79 @@ api.post('/migrate', async (c) => {
     const { services } = await c.req.json()
     
     for (const service of services) {
-      // Insert service
-      const serviceResult = await c.env.DB.prepare(`
-        INSERT INTO services (
-          name, category, account, country, service_version, service_sku,
-          currency, zar_rate, mtd_revenue, mtd_target, actual_run_rate,
-          required_run_rate, subscriber_base, mtd_net_additions
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      // Check if service already exists (by unique key: name + service_version + service_sku + currency)
+      const existingService = await c.env.DB.prepare(`
+        SELECT id FROM services 
+        WHERE name = ? AND service_version = ? AND service_sku = ? AND currency = ?
       `).bind(
         service.name,
-        service.category,
-        service.account,
-        service.country,
         service.serviceVersion,
         service.serviceSKU,
-        service.currency,
-        service.zarRate,
-        service.mtdRevenue || 0,
-        service.mtdTarget || 0,
-        service.actualRunRate || 0,
-        service.requiredRunRate,
-        service.subscriberBase || 0,
-        service.mtdNetAdditions || 0
-      ).run()
+        service.currency
+      ).first()
       
-      const serviceId = serviceResult.meta.last_row_id
+      let serviceId: number
       
-      // Insert daily data
+      if (existingService) {
+        // UPDATE existing service
+        serviceId = existingService.id as number
+        await c.env.DB.prepare(`
+          UPDATE services SET
+            category = ?,
+            account = ?,
+            country = ?,
+            zar_rate = ?,
+            required_run_rate = ?,
+            subscriber_base = ?,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).bind(
+          service.category,
+          service.account,
+          service.country,
+          service.zarRate,
+          service.requiredRunRate,
+          service.subscriberBase || 0,
+          serviceId
+        ).run()
+      } else {
+        // INSERT new service
+        const serviceResult = await c.env.DB.prepare(`
+          INSERT INTO services (
+            name, category, account, country, service_version, service_sku,
+            currency, zar_rate, mtd_revenue, mtd_target, actual_run_rate,
+            required_run_rate, subscriber_base, mtd_net_additions
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          service.name,
+          service.category,
+          service.account,
+          service.country,
+          service.serviceVersion,
+          service.serviceSKU,
+          service.currency,
+          service.zarRate,
+          service.mtdRevenue || 0,
+          service.mtdTarget || 0,
+          service.actualRunRate || 0,
+          service.requiredRunRate,
+          service.subscriberBase || 0,
+          service.mtdNetAdditions || 0
+        ).run()
+        
+        serviceId = serviceResult.meta.last_row_id as number
+      }
+      
+      // Insert or replace daily data (handles both new days and updates to existing days)
       if (service.dailyData && service.dailyData.length > 0) {
         const statements = service.dailyData.map((day: any) =>
           c.env.DB.prepare(`
-            INSERT INTO daily_data (
+            INSERT OR REPLACE INTO daily_data (
               service_id, day, date, business_category, account, country,
               service_version, currency, zar_rate, service_sku, daily_billing_lcu,
               revenue, target, churned_subs, daily_acquisitions, net_additions,
-              subscriber_base
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              subscriber_base, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
           `).bind(
             serviceId,
             day.day,
