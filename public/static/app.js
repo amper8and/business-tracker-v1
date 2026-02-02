@@ -1040,37 +1040,37 @@ const App = {
             const capFilter = capMap[capName];
             
             // Use filtered cards based on global business filter
-            let cards = this.getFilteredKanbanCards().filter(c => c.capability === capFilter);
+            // IMPORTANT: Only count cards in "In Progress" lane for status percentages
+            // This ensures percentages represent actual ongoing work, not Planned/Completed/Paused
+            let cards = this.getFilteredKanbanCards()
+                .filter(c => c.capability === capFilter)
+                .filter(c => c.lane === 'In Progress');  // Only active work
             
-            // Calculate percentages
+            // Calculate percentages based on In Progress cards only
             const total = cards.length;
             if (total === 0) {
                 this.updateCapabilityBox(capKey, 0, 0, 0);
                 return;
             }
             
-            const today = new Date();
-            let onTrack = 0, inProgress = 0, offTrack = 0;
+            let onTrack = 0, atRisk = 0, offTrack = 0;
             
+            // Count cards by status (only In Progress cards are included)
             cards.forEach(card => {
-                if (card.lane === 'Completed') {
+                if (card.status === 'green') {
                     onTrack++;
-                } else if (card.lane === 'In Progress') {
-                    if (card.status === 'green') onTrack++;
-                    else if (card.status === 'amber') inProgress++;
-                    else offTrack++;
-                } else if (card.lane === 'Planned') {
-                    inProgress++;
-                } else if (card.lane === 'Paused') {
-                    offTrack++;
+                } else if (card.status === 'amber') {
+                    atRisk++;
+                } else {
+                    offTrack++;  // red status
                 }
             });
             
             const onTrackPct = Math.round((onTrack / total) * 100);
-            const inProgressPct = Math.round((inProgress / total) * 100);
+            const atRiskPct = Math.round((atRisk / total) * 100);
             const offTrackPct = Math.round((offTrack / total) * 100);
             
-            this.updateCapabilityBox(capKey, onTrackPct, inProgressPct, offTrackPct);
+            this.updateCapabilityBox(capKey, onTrackPct, atRiskPct, offTrackPct);
         });
     },
     
