@@ -59,7 +59,7 @@ This document provides a comprehensive strategy to prevent regressions when maki
 - [ ] Save backup file locally
 - [ ] Verify backup file is valid JSON
 - [ ] Git commit with clear message
-- [ ] Git push to GitHub (if configured)
+- [ ] **MANDATORY: Git push to GitHub** - Keep repository in sync with production
 
 #### 6. Deployment
 - [ ] Apply migrations to production (if any): `npm run db:migrate:prod`
@@ -67,6 +67,7 @@ This document provides a comprehensive strategy to prevent regressions when maki
 - [ ] Deploy: `npx wrangler pages deploy dist --project-name business-tracker-v1`
 - [ ] Wait for deployment confirmation
 - [ ] Note the deployment URL
+- [ ] **MANDATORY: Push to GitHub immediately after successful deployment**
 
 #### 7. Post-Deployment Verification
 - [ ] Visit production URL
@@ -404,8 +405,46 @@ Before ANY code change, ask:
 
 ### 3. Git Workflow Best Practices
 
+#### ⚠️ CRITICAL: GitHub Must Always Be in Sync
+
+**MANDATORY RULE:** Every deployment to production MUST be pushed to GitHub immediately.
+
+**Why This Matters:**
+- GitHub is your backup - if local work is lost, you can recover
+- Team collaboration - others need to see your changes
+- Audit trail - track what was deployed and when
+- Disaster recovery - can rollback to any previous version
+
+#### Standard Git Workflow
+
 ```bash
-# Always work on feature branches (optional but recommended)
+# 1. Make your changes and test locally
+npm run build
+pm2 restart drumtree-tracker
+# Test thoroughly on http://localhost:3000
+
+# 2. Commit your changes with clear messages
+git add .
+git commit -m "fix: Specific description of what was fixed"
+
+# 3. BEFORE deploying to production, ensure GitHub is configured
+# (This should already be done, but verify if uncertain)
+
+# 4. Deploy to production
+npm run build
+npx wrangler pages deploy dist --project-name business-tracker-v1
+
+# 5. IMMEDIATELY after successful deployment, push to GitHub
+git push origin main
+
+# 6. Verify GitHub has your changes
+# Visit: https://github.com/amper8and/business-tracker-v1/commits/main
+```
+
+#### Working with Feature Branches (Optional but Recommended)
+
+```bash
+# Create feature branch for complex changes
 git checkout -b fix/specific-issue
 
 # Make focused, atomic commits
@@ -415,7 +454,7 @@ git commit -m "fix: Ensure revenue calculation persists zar_rate"
 git add public/static/app.js
 git commit -m "fix: Add defensive parsing for zarRate in frontend"
 
-# Before merging, test everything
+# Test everything before merging
 npm run build
 pm2 restart drumtree-tracker
 # Manual verification
@@ -423,6 +462,42 @@ pm2 restart drumtree-tracker
 # Merge to main
 git checkout main
 git merge fix/specific-issue
+
+# Push to GitHub
+git push origin main
+
+# Deploy to production
+npx wrangler pages deploy dist --project-name business-tracker-v1
+```
+
+#### Emergency Fix Workflow
+
+```bash
+# For urgent production fixes:
+# 1. Make the fix
+# 2. Commit immediately
+git add .
+git commit -m "hotfix: Critical issue description"
+
+# 3. Deploy to production
+npm run build
+npx wrangler pages deploy dist --project-name business-tracker-v1
+
+# 4. Push to GitHub IMMEDIATELY (don't forget!)
+git push origin main
+```
+
+#### Checking Sync Status
+
+```bash
+# Check if you have unpushed commits
+git status
+
+# See how many commits ahead of GitHub you are
+git log origin/main..HEAD --oneline
+
+# If you see commits listed, you MUST push them
+git push origin main
 ```
 
 ### 4. Documentation Standards
