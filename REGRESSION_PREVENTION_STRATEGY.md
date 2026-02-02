@@ -59,17 +59,31 @@ This document provides a comprehensive strategy to prevent regressions when maki
 - [ ] Save backup file locally
 - [ ] Verify backup file is valid JSON
 - [ ] Git commit with clear message
-- [ ] **MANDATORY: Git push to GitHub** - Keep repository in sync with production
+- [ ] Git push to GitHub (keeps repository in sync)
 
-#### 6. Deployment
-- [ ] Apply migrations to production (if any): `npm run db:migrate:prod`
+#### 6. Staging Verification & User Approval
 - [ ] Build project: `npm run build`
+- [ ] Start staging environment: `pm2 restart drumtree-tracker`
+- [ ] Test changes on staging: Get public staging URL
+- [ ] **CRITICAL: Present changes to user for review**
+  - Show what was changed (file names, function names)
+  - Explain the fix/feature in plain language
+  - Demonstrate on staging environment
+  - Provide testing instructions
+- [ ] **MANDATORY: Wait for explicit user approval before deploying**
+  - User must review and approve changes
+  - User may request modifications
+  - Do NOT proceed to production without approval
+
+#### 7. Production Deployment (ONLY AFTER USER APPROVAL)
+- [ ] Confirm user approval received
+- [ ] Apply migrations to production (if any): `npm run db:migrate:prod`
 - [ ] Deploy: `npx wrangler pages deploy dist --project-name business-tracker-v1`
 - [ ] Wait for deployment confirmation
 - [ ] Note the deployment URL
 - [ ] **MANDATORY: Push to GitHub immediately after successful deployment**
 
-#### 7. Post-Deployment Verification
+#### 8. Post-Deployment Verification
 - [ ] Visit production URL
 - [ ] Login as Admin
 - [ ] Check Services count (should match pre-deployment)
@@ -79,7 +93,7 @@ This document provides a comprehensive strategy to prevent regressions when maki
 - [ ] Test one CRUD operation per module
 - [ ] **Compare Level 1 and Level 2 KPIs** - must match exactly
 
-#### 8. Rollback Plan (if issues found)
+#### 9. Rollback Plan (if issues found)
 - [ ] Have previous deployment URL ready
 - [ ] Know how to revert migrations (if applied)
 - [ ] Have backup data file ready for import
@@ -427,17 +441,25 @@ pm2 restart drumtree-tracker
 git add .
 git commit -m "fix: Specific description of what was fixed"
 
-# 3. BEFORE deploying to production, ensure GitHub is configured
-# (This should already be done, but verify if uncertain)
+# 3. Push to GitHub (keeps local and remote in sync)
+git push origin main
 
-# 4. Deploy to production
+# 4. Get staging URL and present changes to user
+# Use GetServiceUrl tool to get public staging URL
+# Present: What changed, why, and how to test
+
+# 5. WAIT FOR USER APPROVAL
+# User must explicitly approve before deploying to production
+# Do NOT proceed without approval
+
+# 6. ONLY AFTER APPROVAL: Deploy to production
 npm run build
 npx wrangler pages deploy dist --project-name business-tracker-v1
 
-# 5. IMMEDIATELY after successful deployment, push to GitHub
+# 7. IMMEDIATELY after successful deployment, push to GitHub again
 git push origin main
 
-# 6. Verify GitHub has your changes
+# 8. Verify GitHub has your changes
 # Visit: https://github.com/amper8and/business-tracker-v1/commits/main
 ```
 
@@ -457,17 +479,19 @@ git commit -m "fix: Add defensive parsing for zarRate in frontend"
 # Test everything before merging
 npm run build
 pm2 restart drumtree-tracker
-# Manual verification
+# Manual verification on staging
 
-# Merge to main
+# PRESENT TO USER FOR APPROVAL
+# Show staging URL, explain changes, get approval
+
+# ONLY AFTER APPROVAL: Merge and deploy
 git checkout main
 git merge fix/specific-issue
-
-# Push to GitHub
 git push origin main
 
 # Deploy to production
 npx wrangler pages deploy dist --project-name business-tracker-v1
+git push origin main
 ```
 
 #### Emergency Fix Workflow
@@ -479,7 +503,15 @@ npx wrangler pages deploy dist --project-name business-tracker-v1
 git add .
 git commit -m "hotfix: Critical issue description"
 
-# 3. Deploy to production
+# 3. Push to GitHub
+git push origin main
+
+# 4. PRESENT TO USER (even for emergencies)
+# Quick demo on staging, brief explanation
+
+# 5. GET APPROVAL (can be quick for emergencies)
+
+# 6. Deploy to production
 npm run build
 npx wrangler pages deploy dist --project-name business-tracker-v1
 
@@ -499,6 +531,75 @@ git log origin/main..HEAD --oneline
 # If you see commits listed, you MUST push them
 git push origin main
 ```
+
+#### AI Assistant Workflow (Claude/ChatGPT/etc.)
+
+**CRITICAL RULE:** AI assistants must NEVER deploy to production without explicit user approval.
+
+**Workflow for AI Assistants:**
+
+1. **Understand the Problem**
+   - Read user's issue description carefully
+   - Ask clarifying questions if needed
+   - Identify root cause
+
+2. **Propose Solution**
+   - Explain what will be changed (files, functions, logic)
+   - Explain why this fixes the issue
+   - Explain potential impacts
+   - Get user approval for the approach
+
+3. **Implement Changes**
+   - Make focused, minimal changes
+   - Follow regression prevention principles
+   - Commit to git with clear message
+   - Push to GitHub
+
+4. **Present on Staging (MANDATORY)**
+   - Build project: `npm run build`
+   - Start staging: `pm2 restart drumtree-tracker`
+   - Get public staging URL
+   - **Present to user:**
+     - What was changed (file names, function names)
+     - Why it was changed (explain in plain language)
+     - How to test it (step-by-step instructions)
+     - Staging URL for user to test
+
+5. **WAIT FOR APPROVAL (MANDATORY)**
+   - User must explicitly say "yes", "approved", "go ahead", "deploy", etc.
+   - Do NOT assume approval
+   - Do NOT deploy without explicit confirmation
+   - If user has concerns, address them first
+
+6. **Deploy ONLY After Approval**
+   - Build: `npm run build`
+   - Deploy: `npx wrangler pages deploy dist --project-name business-tracker-v1`
+   - Push to GitHub: `git push origin main`
+   - Provide production URL
+
+7. **Verify Deployment**
+   - Check production URL works
+   - Verify changes are visible
+   - Report success to user
+
+**What Counts as Approval:**
+- ✅ "Yes, please deploy"
+- ✅ "Go ahead"
+- ✅ "Looks good, push it live"
+- ✅ "Deploy to production"
+- ✅ "That's great, ship it"
+
+**What Does NOT Count as Approval:**
+- ❌ "Looks good" (ambiguous - could mean staging looks good)
+- ❌ "Thank you" (politeness, not approval)
+- ❌ Silence (never assume)
+- ❌ "Great work" (appreciation, not deployment instruction)
+
+**If User Does Not Approve:**
+- Keep changes on staging
+- Make requested modifications
+- Present again for approval
+- Do NOT deploy to production
 
 ### 4. Documentation Standards
 
