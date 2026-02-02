@@ -704,6 +704,134 @@ Every significant change requires:
 
 ---
 
+## 🔧 KNOWN ISSUES & TROUBLESHOOTING
+
+### Staging Environment Issue (PENDING RESOLUTION)
+
+**Status:** 🔴 Requires Investigation Before Next Deployment  
+**Created:** February 2, 2026  
+**Priority:** High
+
+#### Problem Description
+
+The staging environment configured in `ecosystem.config.cjs` is experiencing critical failures:
+- **API Errors:** All API endpoints return `500 Internal Server Error`
+- **Database Errors:** `D1_ERROR: no such column: content_business` (columns do exist in remote DB)
+- **Service Restart Loop:** PM2 restarts the service 32+ times due to repeated crashes
+- **CORS Issues:** Staging cannot access production API endpoints
+
+#### Root Causes Identified
+
+1. **Database Binding Mismatch:**
+   - Local staging uses `--local` flag for D1 database
+   - Local database lacks recent schema migrations (content_business, channel_business columns)
+   - Remote database has correct schema but staging doesn't connect to it properly
+
+2. **Migration State Inconsistency:**
+   - Running `npm run db:migrate:local` applies migrations to local SQLite
+   - But staging wrangler process may use different database instance
+   - `.wrangler/state/v3/d1` directory may contain stale database files
+
+3. **Configuration Issues:**
+   - `ecosystem.config.cjs` references `drumtree-tracker` name
+   - May need explicit D1 binding: `--d1=drumtree-tracker-db`
+   - Current args: `wrangler pages dev dist --ip 0.0.0.0 --port 3000`
+
+#### Temporary Workaround
+
+For simple frontend-only changes (like the Kanban percentage fix):
+- **Direct production deployment** is acceptable
+- These changes have zero database/backend impact
+- Risk is minimal and regression-prevented
+
+#### Resolution Plan (Before Next Complex Change)
+
+**MANDATORY:** Resolve staging issues before any changes involving:
+- Database schema changes
+- API endpoint modifications  
+- Backend logic changes
+- Data persistence changes
+
+**Steps to Fix Staging:**
+
+1. **Clean Local Database State**
+   ```bash
+   # Remove stale local database
+   rm -rf .wrangler/state/v3/d1
+   
+   # Reapply all migrations to local database
+   npm run db:migrate:local
+   
+   # Verify migrations applied
+   npx wrangler d1 execute drumtree-tracker-db --local --command="PRAGMA table_info(users);"
+   ```
+
+2. **Update Staging Configuration**
+   ```javascript
+   // ecosystem.config.cjs - Add explicit D1 binding
+   module.exports = {
+     apps: [{
+       name: 'drumtree-tracker',
+       script: 'npx',
+       args: 'wrangler pages dev dist --d1=drumtree-tracker-db --local --ip 0.0.0.0 --port 3000',
+       env: {
+         NODE_ENV: 'development',
+         PORT: 3000
+       },
+       watch: false,
+       instances: 1,
+       exec_mode: 'fork'
+     }]
+   }
+   ```
+
+3. **Restart Staging Properly**
+   ```bash
+   # Kill port and PM2 process
+   fuser -k 3000/tcp 2>/dev/null || true
+   pm2 delete drumtree-tracker 2>/dev/null || true
+   
+   # Clean rebuild
+   npm run build
+   
+   # Start with updated config
+   pm2 start ecosystem.config.cjs
+   
+   # Wait for initialization
+   sleep 5
+   
+   # Test API endpoint
+   curl http://localhost:3000/api/users
+   ```
+
+4. **Verify Staging Works**
+   - [ ] API returns valid JSON (not errors)
+   - [ ] User authentication works
+   - [ ] Database queries succeed
+   - [ ] All CRUD operations function
+   - [ ] Can login with test credentials
+
+5. **Document Resolution**
+   - Update this section with solution
+   - Add to pre-deployment checklist
+   - Create `STAGING_SETUP.md` if needed
+
+#### Workaround Until Fixed
+
+**For Frontend-Only Changes:**
+- Can deploy directly to production (low risk)
+- Must still follow approval workflow
+- Must still test thoroughly on production after deployment
+
+**For Backend/Database Changes:**
+- **MUST fix staging first** (non-negotiable)
+- Cannot deploy without staging verification
+- Risk is too high without proper testing environment
+
+**Priority:** Resolve staging before next database migration or backend change.
+
+---
+
 ## 📚 RELATED DOCUMENTS
 
 - `README.md` - Project overview and setup
