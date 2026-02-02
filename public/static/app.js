@@ -2397,6 +2397,50 @@ const App = {
                 });
             }
             
+            // Populate Month filter dynamically from available data
+            const monthFilter = document.getElementById('perf-month-filter');
+            if (monthFilter) {
+                // Extract unique months from all daily data across all services
+                const monthsSet = new Set();
+                services.forEach(service => {
+                    if (service.dailyData && Array.isArray(service.dailyData)) {
+                        service.dailyData.forEach(day => {
+                            if (day.date) {
+                                // Extract YYYY-MM from date (format: 2026-02-01)
+                                const monthPrefix = day.date.substring(0, 7);
+                                monthsSet.add(monthPrefix);
+                            }
+                        });
+                    }
+                });
+                
+                // Convert to array and sort in descending order (newest first)
+                const months = Array.from(monthsSet).sort().reverse();
+                
+                // Populate dropdown
+                monthFilter.innerHTML = '';
+                months.forEach(month => {
+                    const option = document.createElement('option');
+                    option.value = month;
+                    // Format as "Month Year" (e.g., "February 2026")
+                    const [year, monthNum] = month.split('-');
+                    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                       'July', 'August', 'September', 'October', 'November', 'December'];
+                    option.textContent = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
+                    monthFilter.appendChild(option);
+                });
+                
+                // Set default to current month (YYYY-MM format)
+                const today = new Date();
+                const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+                if (months.includes(currentMonth)) {
+                    monthFilter.value = currentMonth;
+                } else if (months.length > 0) {
+                    // If current month not available, default to the most recent month
+                    monthFilter.value = months[0];
+                }
+            }
+            
             // Set default filter for Lead users (if applicable)
             if (STATE.currentUser.type === 'Lead') {
                 const categoryFilter = document.getElementById('perf-category-filter');
