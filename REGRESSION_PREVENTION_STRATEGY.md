@@ -706,15 +706,48 @@ Every significant change requires:
 
 ## 🔧 KNOWN ISSUES & TROUBLESHOOTING
 
-### Staging Environment Issue (PENDING RESOLUTION)
+### Staging Environment Issue (RESOLVED ✅)
 
-**Status:** 🔴 Requires Investigation Before Next Deployment  
+**Status:** 🟢 **RESOLVED - Staging Fully Operational**  
 **Created:** February 2, 2026  
-**Priority:** High
+**Resolved:** February 2, 2026  
+**Resolution Time:** ~20 minutes  
+**Documentation:** See `STAGING_RESOLUTION.md` for complete details
 
-#### Problem Description
+#### ✅ Resolution Summary
 
-The staging environment configured in `ecosystem.config.cjs` is experiencing critical failures:
+**Root Cause:** Stale local database in `.wrangler/state/v3/d1` missing recent schema migrations.
+
+**Solution Applied:**
+1. ✅ Removed stale local database: `rm -rf .wrangler/state/v3/d1`
+2. ✅ Applied all 6 migrations to fresh local database
+3. ✅ Seeded test users with `seed-local.sql`
+4. ✅ Rebuilt and restarted staging environment
+
+**Verification:**
+- ✅ All API endpoints returning 200 OK
+- ✅ Database schema includes content_business and channel_business columns
+- ✅ 7 test users seeded (3 Admins, 2 Leads, 2 Users)
+- ✅ Zero restart loops (PM2 stable)
+- ✅ Public staging URL accessible
+
+**Staging URL:** https://3000-iy0c13hbq65mj1ofyswlo-6532622b.e2b.dev
+
+**Test Credentials:**
+- Admin: `admin` / `password123` or `Pelayo` / `Bd122476`
+- Lead: `Charlotte` / `password123`
+- User: `Comfort` / `password123`
+
+**Standard Restart Procedure Created:**
+- Quick restart: `pm2 restart drumtree-tracker`
+- Full rebuild: `npm run build && pm2 restart drumtree-tracker`
+- Clean restart: Full procedure documented in `STAGING_RESOLUTION.md`
+
+---
+
+#### ~Original Problem Description~
+
+~The staging environment configured in `ecosystem.config.cjs` was experiencing critical failures:~
 - **API Errors:** All API endpoints return `500 Internal Server Error`
 - **Database Errors:** `D1_ERROR: no such column: content_business` (columns do exist in remote DB)
 - **Service Restart Loop:** PM2 restarts the service 32+ times due to repeated crashes
@@ -816,19 +849,18 @@ For simple frontend-only changes (like the Kanban percentage fix):
    - Add to pre-deployment checklist
    - Create `STAGING_SETUP.md` if needed
 
-#### Workaround Until Fixed
+---
 
-**For Frontend-Only Changes:**
-- Can deploy directly to production (low risk)
-- Must still follow approval workflow
-- Must still test thoroughly on production after deployment
+#### 📚 Complete Resolution Details
 
-**For Backend/Database Changes:**
-- **MUST fix staging first** (non-negotiable)
-- Cannot deploy without staging verification
-- Risk is too high without proper testing environment
+For complete documentation including:
+- Detailed root cause analysis
+- Step-by-step resolution process
+- Verification test results
+- Future prevention strategies
+- Standard restart procedures
 
-**Priority:** Resolve staging before next database migration or backend change.
+**See:** `STAGING_RESOLUTION.md`
 
 ---
 
