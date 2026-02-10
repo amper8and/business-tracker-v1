@@ -350,6 +350,7 @@ app.get('*', async (c) => {
                     <div class="filter-group">
                         <label>Capability:</label>
                         <select id="kanban-filter-capability" multiple>
+                            <option value="All" selected>All</option>
                             <option value="Stakeholder Engagement">Stakeholder Engagement</option>
                             <option value="Business Development">Business Development</option>
                             <option value="Product Planning">Product Planning</option>
@@ -360,6 +361,7 @@ app.get('*', async (c) => {
                     <div class="filter-group">
                         <label>Lanes:</label>
                         <select id="kanban-filter-lanes" multiple>
+                            <option value="All" selected>All</option>
                             <option value="Planned">Planned</option>
                             <option value="In Progress">In Progress</option>
                             <option value="Completed">Completed</option>
@@ -369,6 +371,7 @@ app.get('*', async (c) => {
                     <div class="filter-group">
                         <label>Business Category:</label>
                         <select id="kanban-filter-category" multiple>
+                            <option value="All" selected>All</option>
                             <option value="Content">Content Business</option>
                             <option value="Channel">Channel Business</option>
                         </select>

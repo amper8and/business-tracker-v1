@@ -4279,6 +4279,14 @@ const App = {
         // Clear and populate
         ownerFilter.innerHTML = '';
         
+        // Add "All" option first
+        const allOption = document.createElement('option');
+        allOption.value = 'All';
+        allOption.textContent = 'All';
+        allOption.selected = true; // Select "All" by default
+        ownerFilter.appendChild(allOption);
+        console.log('Added "All" option to owner filter');
+        
         // Add each user
         STATE.users.forEach((user, index) => {
             const option = document.createElement('option');
@@ -4307,19 +4315,22 @@ const App = {
         // Start with filtered cards based on global business filter and user permissions
         let cards = this.getFilteredKanbanCards();
         
-        // Apply additional Kanban-specific filters
-        if (STATE.filters.kanban.capability.length > 0) {
+        // Apply additional Kanban-specific filters (skip if "All" is selected)
+        if (STATE.filters.kanban.capability.length > 0 && !STATE.filters.kanban.capability.includes('All')) {
             cards = cards.filter(c => STATE.filters.kanban.capability.includes(c.capability));
         }
-        if (STATE.filters.kanban.category.length > 0) {
+        if (STATE.filters.kanban.category.length > 0 && !STATE.filters.kanban.category.includes('All')) {
             cards = cards.filter(c => STATE.filters.kanban.category.includes(c.category));
         }
-        if (STATE.filters.kanban.owner.length > 0) {
+        if (STATE.filters.kanban.owner.length > 0 && !STATE.filters.kanban.owner.includes('All')) {
             cards = cards.filter(c => STATE.filters.kanban.owner.includes(c.owner));
         }
         
-        // Group by lane
-        const lanes = STATE.filters.kanban.lanes.length > 0 ? STATE.filters.kanban.lanes : ['Planned', 'In Progress', 'Completed', 'Paused'];
+        // Determine which lanes to display (if "All" is selected or no selection, show all lanes)
+        const lanes = (STATE.filters.kanban.lanes.length === 0 || STATE.filters.kanban.lanes.includes('All')) 
+            ? ['Planned', 'In Progress', 'Completed', 'Paused']
+            : STATE.filters.kanban.lanes;
+        
         const board = document.getElementById('kanban-board');
         
         board.innerHTML = lanes.map(lane => {
