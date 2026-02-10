@@ -4527,39 +4527,137 @@ const App = {
             return;
         }
         
-        const cardData = {
-            name,
-            capability,
-            owner,
-            category,
-            startDate,
-            targetDate,
-            status,
-            lane,
-            comments
-        };
+        // Get save button for visual feedback
+        const saveButton = document.getElementById('save-card-btn');
+        const originalButtonText = saveButton ? saveButton.textContent : '';
         
-        if (cardId) {
-            // Update existing
-            const card = STATE.kanbanCards.find(c => c.id === cardId);
-            if (card) {
-                // Check permissions - Admin can edit any card, others can only edit their own
-                if (STATE.currentUser.type.trim() !== 'Admin' && card.owner !== STATE.currentUser.username) {
-                    alert('You can only edit cards you own');
-                    return;
-                }
-                Object.assign(card, cardData);
+        try {
+            // Disable button and show loading state
+            if (saveButton) {
+                saveButton.disabled = true;
+                saveButton.textContent = cardId ? 'Updating...' : 'Saving...';
+                saveButton.style.opacity = '0.6';
+                saveButton.style.cursor = 'not-allowed';
             }
-        } else {
-            // Add new
-            cardData.id = Utils.generateId();
-            STATE.kanbanCards.push(cardData);
+            
+            const cardData = {
+                name,
+                capability,
+                owner,
+                category,
+                startDate,
+                targetDate,
+                status,
+                lane,
+                comments
+            };
+            
+            let isNewCard = false;
+            
+            if (cardId) {
+                // Update existing
+                const card = STATE.kanbanCards.find(c => c.id === cardId);
+                if (card) {
+                    // Check permissions - Admin can edit any card, others can only edit their own
+                    if (STATE.currentUser.type.trim() !== 'Admin' && card.owner !== STATE.currentUser.username) {
+                        alert('You can only edit cards you own');
+                        return;
+                    }
+                    Object.assign(card, cardData);
+                    
+                    // Save directly to database
+                    const dbCardData = {
+                        id: cardId,
+                        title: name,
+                        description: comments || capability,
+                        category: category,
+                        priority: status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Medium',
+                        status: lane,
+                        assignedTo: owner,
+                        dueDate: targetDate,
+                        capability: capability,
+                        owner: owner,
+                        startDate: startDate,
+                        targetDate: targetDate,
+                        lane: lane,
+                        comments: comments
+                    };
+                    await DBService.updateKanban(cardId, dbCardData);
+                    console.log('✅ Updated kanban card:', cardId);
+                }
+            } else {
+                // Add new
+                isNewCard = true;
+                cardData.id = Utils.generateId();
+                
+                // Add to local state immediately (optimistic update)
+                STATE.kanbanCards.push(cardData);
+                
+                // Save directly to database
+                const dbCardData = {
+                    id: cardData.id,
+                    title: name,
+                    description: comments || capability,
+                    category: category,
+                    priority: status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Medium',
+                    status: lane,
+                    assignedTo: owner,
+                    dueDate: targetDate,
+                    capability: capability,
+                    owner: owner,
+                    startDate: startDate,
+                    targetDate: targetDate,
+                    lane: lane,
+                    comments: comments
+                };
+                await DBService.createKanban(dbCardData);
+                console.log('✅ Created kanban card:', cardData.id);
+            }
+            
+            // Show success message
+            if (saveButton) {
+                saveButton.textContent = isNewCard ? 'Activity Saved!' : 'Activity Updated!';
+                saveButton.style.backgroundColor = '#10b981';
+                saveButton.style.color = 'white';
+            }
+            
+            // Wait a moment to show success state
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            // Close modal and refresh display
+            Utils.hide('card-modal');
+            this.renderKanban();
+            this.updateScorecardData();
+            
+            // Show toast notification
+            this.showToast(isNewCard ? 'Activity created successfully!' : 'Activity updated successfully!', 'success');
+            
+        } catch (error) {
+            console.error('❌ Failed to save kanban card:', error);
+            
+            // Show error message
+            if (saveButton) {
+                saveButton.textContent = 'Error - Please try again';
+                saveButton.style.backgroundColor = '#ef4444';
+                saveButton.style.color = 'white';
+            }
+            
+            // Show error toast
+            this.showToast('Failed to save activity: ' + error.message, 'error');
+            
+            // Wait before re-enabling
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        } finally {
+            // Reset button state
+            if (saveButton) {
+                saveButton.disabled = false;
+                saveButton.textContent = originalButtonText;
+                saveButton.style.opacity = '1';
+                saveButton.style.cursor = 'pointer';
+                saveButton.style.backgroundColor = '';
+                saveButton.style.color = '';
+            }
         }
-        
-        await this.saveKanbanData();
-        Utils.hide('card-modal');
-        this.renderKanban();
-        this.updateScorecardData();
     },
     
     async deleteCard() {
@@ -4593,6 +4691,75 @@ const App = {
                 alert('Failed to delete card: ' + error.message);
             }
         }
+    },
+    
+    // Show toast notification
+    showToast(message, type = 'success') {
+        // Remove existing toasts
+        const existingToast = document.querySelector('.toast-notification');
+        if (existingToast) {
+            existingToast.remove();
+        }
+        
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.textContent = message;
+        
+        // Style based on type
+        const bgColor = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6';
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: ${bgColor};
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+        `;
+        
+        // Add animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+            }
+        `;
+        if (!document.querySelector('style[data-toast-styles]')) {
+            style.setAttribute('data-toast-styles', 'true');
+            document.head.appendChild(style);
+        }
+        
+        // Add to DOM
+        document.body.appendChild(toast);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 };
 
