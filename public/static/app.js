@@ -967,12 +967,12 @@ const App = {
         // 'company' shows all cards
         
         // Apply user permissions on top of business filter
+        // Admin and Lead: See all activities (no filtering)
+        // User: Only see their own activities
         if (STATE.currentUser.type === 'User') {
             cards = cards.filter(c => c.owner === STATE.currentUser.username);
-        } else if (STATE.currentUser.type === 'Lead') {
-            const category = STATE.currentUser.contentBusiness ? 'Content' : 'Channel';
-            cards = cards.filter(c => c.category === category);
         }
+        // Admin and Lead can see all cards (no additional filtering)
         
         return cards;
     },
@@ -4487,8 +4487,8 @@ const App = {
                     ownersMatch: card.owner === STATE.currentUser.username
                 });
                 
-                // Check permissions - Admin can edit any card, others can only edit their own
-                if (STATE.currentUser.type.trim() !== 'Admin' && card.owner !== STATE.currentUser.username) {
+                // Check permissions - Admin and Lead can edit any card, User can only edit their own
+                if (STATE.currentUser.type.trim() === 'User' && card.owner !== STATE.currentUser.username) {
                     alert('You can only edit cards you own');
                     Utils.hide('card-modal');
                     return;
@@ -4569,8 +4569,8 @@ const App = {
                 // Update existing
                 const card = STATE.kanbanCards.find(c => c.id === cardId);
                 if (card) {
-                    // Check permissions - Admin can edit any card, others can only edit their own
-                    if (STATE.currentUser.type.trim() !== 'Admin' && card.owner !== STATE.currentUser.username) {
+                    // Check permissions - Admin and Lead can edit any card, User can only edit their own
+                    if (STATE.currentUser.type.trim() === 'User' && card.owner !== STATE.currentUser.username) {
                         alert('You can only edit cards you own');
                         return;
                     }
@@ -4680,8 +4680,8 @@ const App = {
         if (index !== -1) {
             const card = STATE.kanbanCards[index];
             
-            // Check permissions - Admin can delete any card, others can only delete their own
-            if (STATE.currentUser.type.trim() !== 'Admin' && card.owner !== STATE.currentUser.username) {
+            // Check permissions - Admin and Lead can delete any card, User can only delete their own
+            if (STATE.currentUser.type.trim() === 'User' && card.owner !== STATE.currentUser.username) {
                 alert('You can only delete cards you own');
                 return;
             }
